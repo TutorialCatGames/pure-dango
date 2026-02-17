@@ -6,4 +6,8 @@ A simple language built from JavaScript.
 ``` bash
 cd path to pure-dango
 node src/index.js example.pds
+
 ```
+
+## Language Guide
+For full pure-dango language details, see [Language Guide](index.md)

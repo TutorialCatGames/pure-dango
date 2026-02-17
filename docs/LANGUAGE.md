@@ -1,13 +1,12 @@
 # pure-dango v0.9.1 syntax
 
-<style>
-comment {color: grey;}
-string {color: #88D57B;}
-keyword {color: #7FBFFF;}
-function {color: #E9C4E3;}
-number {color: #BFE1B4;}
-example {color: grey;}
-</style>
+Prism.languages['pure-dango'] = {
+    'keyword': /\b(new|if|else|while|for|function|return)\b/,
+    'number': /\b\d+\b/,
+    'comment': /#.*/,
+    'string': /"(?:\\.|[^"\\])*"/
+};
+
 
 ## LANGUAGE CHARACTERISTICS
 - dynamically typed
@@ -468,3 +467,4 @@ Example:
 
 <function>print</function>(<string>"Hello "</string>, name, <string>"!"</string>);
 </pre>
+

@@ -60,14 +60,14 @@ Syntax:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <keyword>new</keyword> <example>name</example> = <example>value</example>
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <keyword>new</keyword> x; <comment># declaration</comment>
 x = <number>5</number>; <comment># assignment</comment>
-</pre>
+</code></pre>
 
 ### \`if\`
 - Purpose:
@@ -84,7 +84,7 @@ Syntax:
 {
     <example>...</example>
 }
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -94,7 +94,7 @@ Example:
 {
     <function>print</function>(<string>"hi"</string>);
 }
-</pre>
+</code></pre>
 
 ### \`else\`
 - Purpose:
@@ -119,7 +119,7 @@ Syntax:
 {
     <example>...</example>
 }
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -134,7 +134,7 @@ Example:
 {
     <function>print</function>(<string>"bar"</string>);
 }
-</pre>
+</code></pre>
 
 ### \`while\`
 - Purpose:
@@ -151,7 +151,7 @@ Syntax:
 {
     <example>...</example>
 }
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -161,7 +161,7 @@ Example:
 {
     <function>input</function>(<string>"baz"</string>); <comment># will run forever</comment>
 }
-</pre>
+</code></pre>
 
 ### \`for\`
 - Purpose:
@@ -178,7 +178,7 @@ Syntax:
 {
     <example>...</example>
 }
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -189,7 +189,7 @@ Example:
 {
     <function>print</function>(i*pdango);
 }
-</pre>
+</code></pre>
 
 ### \`break\`
 - Purpose:
@@ -201,7 +201,7 @@ Syntax:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <keyword>break</keyword>;
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -217,7 +217,7 @@ x = <number>5</number>;
 
     <function>print</function>(i);
 }
-</pre>
+</code></pre>
 
 ### \`continue\`
 - Purpose:
@@ -229,7 +229,7 @@ Syntax:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <keyword>continue</keyword>;
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -245,7 +245,7 @@ Example:
 
     <function>print</function>(i);
 }
-</pre>
+</code></pre>
 
 ### \`function\`
 - Purpose:
@@ -273,7 +273,7 @@ Syntax:
 {
     <example>...</example>
 }
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -288,7 +288,7 @@ new op = <function>add</function>;
 
 <function>add</function> = <number>10</number>;
 <keyword>print</keyword>(<function>op</function>(<number>2</number>, <number>3</number>));   <comment># still prints "5" because op still points to the original function</comment>
-</pre>
+</code></pre>
 
 ### \`return\`
 - Purpose:
@@ -302,7 +302,7 @@ Syntax:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <keyword>return</keyword> <example>value</example>;
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -322,7 +322,7 @@ Example:
 }
 
 <function>greet</function>(<string>"alice"</string>) <comment># prints "Hello, alice"</comment>
-</pre>
+</code></pre>
 
 
 
@@ -335,7 +335,7 @@ Syntax:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <function>print</function>(<example>...</example>);
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -343,7 +343,7 @@ Example:
 <keyword>new</keyword> greet1 = <string>"hello "</string>;
 <keyword>new</keyword> greet2 = <string>"world!"</string>;
 <function>print</function>(greet1, greet2); <comment># prints out "hello world!"</comment>
-</pre>
+</code></pre>
 
 ### \`now\`
 - Purpose:
@@ -353,7 +353,7 @@ Syntax:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <function>now</function>();
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -370,7 +370,7 @@ Example:
 <keyword>new</keyword> end = <function>now</function>();
 
 <function>print</function>("Loop time: ", end-start);
-</pre>
+</code></pre>
 
 ### \`setPrecision\`
 - Purpose:
@@ -382,7 +382,7 @@ Syntax:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <function>setPrecision</function>(<example>precision</example>);
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -398,7 +398,7 @@ Example:
 }
 
 <function>print</function>(result); <comment># prints "2.075335420483538463387032931950717991643172131537589056731451534099765834960354642594532814087239997711781608519664648636522078428226943812450152800863173055702053951473991251429359622489604075730331078526506212598922643479526468070637501458922142146609368329751088648017607092245660106731348096824975011379053724696576e+78" because Decimal has limits.</comment>
-</pre>
+</code></pre>
 
 ### \`raise\`
 - Purpose:
@@ -412,7 +412,7 @@ Syntax:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <function>raise</function>(<example>base</example>, <example>exponent</example>, <example>useNativeMath</example>);
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -428,7 +428,7 @@ Example:
 <keyword>new</keyword> exp = <number>100</number>;
 
 <function>print</function>(<function>raise</function>(base, exp, <keyword>true</keyword>)); <comment># prints "1.2676506002282294e+30"</comment>
-</pre>
+</code></pre>
 
 ### \`root\`
 - Purpose:
@@ -442,7 +442,7 @@ Syntax:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <function>root</function>(<example>base</example>, <example>root</example>, <example>useNativeMath</example>);
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -458,7 +458,7 @@ Example:
 <keyword>new</keyword> root = <number>2</number>;
 
 <function>print</function>(<function>root</function>(base, root, <keyword>true</keyword>)); <comment># prints "1e+27"</comment>
-</pre>
+</code></pre>
 
 ### \`concat\`
 - Purpose:
@@ -468,7 +468,7 @@ Syntax:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <function>concat</function>(<example>...</example>);
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -478,7 +478,7 @@ Example:
 <keyword>new</keyword> part2 = <string>"dango"</string>;
 
 <function>print</function>(<function>concat</function>(part1, separator, part2));   <comment># prints "pure-dango"</comment>
-</pre>
+</code></pre>
 
 ### \`input\`
 - Purpose:
@@ -490,7 +490,7 @@ Syntax:
 > **pure-dango**
 <pre><code class="language-pure-dango">
 <function>input</function>(<example>...</example>);
-</pre>
+</code></pre>
 
 Example:
 > **pure-dango**
@@ -498,7 +498,7 @@ Example:
 <keyword>new</keyword> name = input(<string>"What is your name"</string>, <string>"?: "</string>);
 
 <function>print</function>(<string>"Hello "</string>, name, <string>"!"</string>);
-</pre>
+</code></pre>
         `;
         document.getElementById("docs").innerHTML = marked.parse(markdown, {sanitize: false});
         Prism.highlightAll();

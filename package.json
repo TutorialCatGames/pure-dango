@@ -1,0 +1,46 @@
+{
+  "name": "pure-dango",
+  "version": "0.9.1",
+  "type": "module",
+  "sourceType": "module",
+  "description": "A simple programming language built in JavaScript",
+
+  "bin":
+  {
+    "pure-dango": "src/index.js"
+  },
+
+  "scripts":
+  {
+    "build": "node src/scripts/build.js"
+  },
+
+  "dependencies":
+  {
+    "decimal.js": "^10.6.0"
+  },
+
+  "devDependencies":
+  {
+    "pkg": "^5.8.1"
+  },
+
+  "pkg": {
+    "scripts":
+    [
+      "src/scripts/launcher.cjs"
+    ],
+
+    "assets": [
+      "package.json",
+      "node_modules/**/*",
+      "src/index.js",
+      "src/core/**/*.js",
+      "src/runtime/**/*.js"
+    ],
+
+    "targets": [
+      "node18-win-x64"
+    ]
+  }
+}

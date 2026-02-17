@@ -6,14 +6,22 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-markup.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
-        comment    {color: grey;}
-        string     {color: #88D57B;}
-        keyword    {color: #7FBFFF;}
-        function   {color: #E9C4E3;}
-        number     {color: #BFE1B4;}
-        example    {color: grey;}
+        pre code keyword    { color: #7FBFFF; }
+        pre code string     { color: #88D57B; }
+        pre code number     { color: #BFE1B4; }
+        pre code comment    { color: grey; }
+        pre code function   { color: #E9C4E3; }
+        pre code example    { color: grey; }
+
+        pre code
+        {
+            white-space: pre;
+            font-family: monospace;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -492,7 +500,7 @@ Example:
 <function>print</function>(<string>"Hello "</string>, name, <string>"!"</string>);
 </pre>
         `;
-        document.getElementById("docs").innerHTML = markdown;
+        document.getElementById("docs").innerHTML = marked.parse(markdown, {sanitize: false});
         Prism.highlightAll();
     </script>
 </body>

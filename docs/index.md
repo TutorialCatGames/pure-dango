@@ -1,6 +1,25 @@
 # pure-dango v0.9.1 syntax
 
 <style>
+body
+{
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+pre, code
+{
+    background-color: #2d2d2d;
+    color: #d4d4d4;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+}
+
+a
+{
+    color: #569cd6;
+}
 comment {color: grey;}
 string {color: #88D57B;}
 keyword {color: #7FBFFF;}

@@ -9,12 +9,12 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
-        .token.comment  {color: grey;}
-        .token.string   {color: #88D57B;}
-        .token.keyword  {color: #7FBFFF;}
-        .token.function {color: #E9C4E3;}
-        .token.number   {color: #BFE1B4;}
-        example {color: grey;}
+        .token.comment    {color: grey;}
+        .token.string     {color: #88D57B;}
+        .token.keyword    {color: #7FBFFF;}
+        .token.function   {color: #E9C4E3;}
+        .token.number     {color: #BFE1B4;}
+        .token.example    {color: grey;}
 
         pre code
         {
@@ -30,11 +30,12 @@
     <script>
         Prism.languages["pure-dango"] =
         {
-            "keyword" :   /\b(new|if|else|while|for|function|return)\b/,
-            "number"  :   /\b\d+\b/,
-            "function":   /\b(print|input|raise|root|concat|now|setPrecision)\b/,
-            "comment" :   /#.*/,
-            "string"  :   /"(?:\\.|[^"\\])*"/
+            "keyword"   :   /\b(new|if|else|while|for|function|return)\b/,
+            "number"    :   /\b\d+\b/,
+            "function"  :   /\b(print|input|raise|root|concat|now|setPrecision)\b/,
+            "comment"   :   /#.*/,
+            "string"    :   /"(?:\\.|[^"\\])*"/
+            "example"   :   /<example>.*?<\/example>/
         };
 
         const markdown = `

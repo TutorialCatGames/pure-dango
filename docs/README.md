@@ -10,4 +10,4 @@ node src/index.js example.pds
 ```
 
 ## Language Guide
-For full pure-dango language details, see [language details](index.md)
+For full pure-dango language details, see [language details](https://tutorialcatgames.github.io/pure-dango/)

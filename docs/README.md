@@ -5,5 +5,6 @@ A simple language built from JavaScript.
 ## Quick Start
 ``` bash
 cd path to pure-dango
-node src/index.js example.pds
+dist/PureDangoLauncher.exe run example.pds
+
 ```

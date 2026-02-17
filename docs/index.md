@@ -1,5 +1,3 @@
-# pure-dango v0.9.1 syntax
-
 <style>
 body
 {
@@ -20,12 +18,12 @@ a
 {
     color: #569cd6;
 }
-comment {color: grey;}
-string {color: #88D57B;}
-keyword {color: #7FBFFF;}
-function {color: #E9C4E3;}
-number {color: #BFE1B4;}
-example {color: grey;}
+comment    {color: grey;}
+string     {color: #88D57B;}
+keyword    {color: #7FBFFF;}
+function   {color: #E9C4E3;}
+number     {color: #BFE1B4;}
+example    {color: grey;}
 </style>
 
 ## LANGUAGE CHARACTERISTICS
@@ -46,16 +44,20 @@ example {color: grey;}
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> <example>name</example> = <example>value</example>
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> x; <comment># declaration</comment>
 x = <number>5</number>; <comment># assignment</comment>
 </pre>
+```
 
 ### `if`
 - Purpose:
@@ -67,15 +69,18 @@ x = <number>5</number>; <comment># assignment</comment>
   
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <keyword>if</keyword> (<example>condition</example>)
 {
     <example>...</example>
 }
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> foo = <number>5</number>;
 <keyword>if</keyword> (foo == <number>5</number>)
@@ -83,6 +88,7 @@ Example:
     <function>print</function>(<string>"hi"</string>);
 }
 </pre>
+```
 
 ### `else`
 - Purpose:
@@ -95,6 +101,7 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <comment># unconditional</comment>
 <keyword>else</keyword>
@@ -108,9 +115,11 @@ Syntax:
     <example>...</example>
 }
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> foo = <number>5</number>;
 <keyword>if</keyword> (foo < <number>5</number>)
@@ -123,6 +132,7 @@ Example:
     <function>print</function>(<string>"bar"</string>);
 }
 </pre>
+```
 
 ### `while`
 - Purpose:
@@ -134,15 +144,18 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <keyword>while</keyword> (<example>condition</example>)
 {
     <example>...</example>
 }
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> baz = <number>6</number>;
 <keyword>while</keyword> (baz == <number>6</number>)
@@ -150,6 +163,7 @@ Example:
     <function>input</function>(<string>"baz"</string>); <comment># will run forever</comment>
 }
 </pre>
+```
 
 ### `for`
 - Purpose:
@@ -161,15 +175,18 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <keyword>for</keyword> (<example>initial</example>; <example>condition</example>; <example>update</example>)
 {
     <example>...</example>
 }
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> pmochi = <number>6</number>;
 <keyword>new</keyword> pdango = pmochi * <number>3</number>;
@@ -178,6 +195,7 @@ Example:
     <function>print</function>(i*pdango);
 }
 </pre>
+```
 
 ### `break`
 - Purpose:
@@ -187,12 +205,15 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <keyword>break</keyword>;
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> x;
 x = <number>5</number>;
@@ -206,6 +227,7 @@ x = <number>5</number>;
     <function>print</function>(i);
 }
 </pre>
+```
 
 ### `continue`
 - Purpose:
@@ -215,12 +237,15 @@ x = <number>5</number>;
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <keyword>continue</keyword>;
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> fizz = <number>5</number>;
 <keyword>new</keyword> buzz = <number>7</number>;
@@ -234,6 +259,7 @@ Example:
     <function>print</function>(i);
 }
 </pre>
+```
 
 ### `function`
 - Purpose:
@@ -256,15 +282,18 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <keyword>function</keyword> <example>name</example>(<example>parameters</example>)
 {
     <example>...</example>
 }
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>function</keyword> add(a, b)
 {
@@ -277,6 +306,7 @@ new op = <function>add</function>;
 <function>add</function> = <number>10</number>;
 <keyword>print</keyword>(<function>op</function>(<number>2</number>, <number>3</number>));   <comment># still prints "5" because op still points to the original function</comment>
 </pre>
+```
 
 ### `return`
 - Purpose:
@@ -288,12 +318,15 @@ new op = <function>add</function>;
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <keyword>return</keyword> <example>value</example>;
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <comment># with return</comment>
 <keyword>function</keyword> pow(a, b)
@@ -311,6 +344,7 @@ Example:
 
 <function>greet</function>(<string>"alice"</string>) <comment># prints "Hello, alice"</comment>
 </pre>
+```
 
 
 
@@ -321,17 +355,21 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <function>print</function>(<example>...</example>);
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> greet1 = <string>"hello "</string>;
 <keyword>new</keyword> greet2 = <string>"world!"</string>;
 <function>print</function>(greet1, greet2); <comment># prints out "hello world!"</comment>
 </pre>
+```
 
 ### `now`
 - Purpose:
@@ -339,12 +377,15 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <function>now</function>();
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> start = <function>now</function>();
 <keyword>new</keyword> iterations = <number>10000</number>;
@@ -359,6 +400,7 @@ Example:
 
 <function>print</function>("Loop time: ", end-start);
 </pre>
+```
 
 ### `setPrecision`
 - Purpose:
@@ -368,12 +410,15 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <function>setPrecision</function>(<example>precision</example>);
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <function>setPrecision</function>(<number>1000</number>);
 
@@ -387,6 +432,7 @@ Example:
 
 <function>print</function>(result); <comment># prints "2.075335420483538463387032931950717991643172131537589056731451534099765834960354642594532814087239997711781608519664648636522078428226943812450152800863173055702053951473991251429359622489604075730331078526506212598922643479526468070637501458922142146609368329751088648017607092245660106731348096824975011379053724696576e+78" because Decimal has limits.</comment>
 </pre>
+```
 
 ### `raise`
 - Purpose:
@@ -398,12 +444,15 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <function>raise</function>(<example>base</example>, <example>exponent</example>, <example>useNativeMath</example>);
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <comment># using precise math</comment>
 <keyword>new</keyword> base = <number>2</number>;
@@ -417,6 +466,7 @@ Example:
 
 <function>print</function>(<function>raise</function>(base, exp, <keyword>true</keyword>)); <comment># prints "1.2676506002282294e+30"</comment>
 </pre>
+```
 
 ### `root`
 - Purpose:
@@ -428,12 +478,15 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <function>root</function>(<example>base</example>, <example>root</example>, <example>useNativeMath</example>);
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <comment># using precise math</comment>
 <keyword>new</keyword> base = <number>1000000000000000000000000000000000000000000000000000000</number>;
@@ -447,6 +500,7 @@ Example:
 
 <function>print</function>(<function>root</function>(base, root, <keyword>true</keyword>)); <comment># prints "1e+27"</comment>
 </pre>
+```
 
 ### `concat`
 - Purpose:
@@ -454,12 +508,15 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <function>concat</function>(<example>...</example>);
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> part1 = <string>"pure"</string>;
 <keyword>new</keyword> separator = <string>"-"</string>;
@@ -467,6 +524,7 @@ Example:
 
 <function>print</function>(<function>concat</function>(part1, separator, part2));   <comment># prints "pure-dango"</comment>
 </pre>
+```
 
 ### `input`
 - Purpose:
@@ -476,14 +534,18 @@ Example:
 
 Syntax:
 > **pure-dango**
+``` html
 <pre>
 <function>input</function>(<example>...</example>);
 </pre>
+```
 
 Example:
 > **pure-dango**
+``` html
 <pre>
 <keyword>new</keyword> name = input(<string>"What is your name"</string>, <string>"?: "</string>);
 
 <function>print</function>(<string>"Hello "</string>, name, <string>"!"</string>);
 </pre>
+```

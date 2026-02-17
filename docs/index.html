@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>language.md</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-markup.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        .token.comment    {color: grey;}
+        .token.string     {color: #88D57B;}
+        .token.keyword    {color: #7FBFFF;}
+        .token.function   {color: #E9C4E3;}
+        .token.number     {color: #BFE1B4;}
+        .token.example    {color: grey;}
+
+        pre code
+        {
+            white-space: pre;
+            font-family: monospace;
+            display: block;
+        }
+
+        body
+        {
+            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+            line-height: 1.5;
+            margin-left: 185px;
+            margin-top: 25px;
+            background-color: #1e1e1e;
+            color: #ddd;
+        }
+
+        h1, h2
+        {
+            font-weight: 600;
+            font-family: -apple-system, BlinkMacSystemFont, 
+                "Segoe UI", Helvetica, Arial, sans-serif,
+                "Apple Color Emoji", "Segoe UI Emoji";
+            border-bottom: 1px solid #FFFF;
+            padding-bottom: 0.15em;
+        }
+
+        h3
+        {
+            font-size: 1.5em;
+        }
+    </style>
+</head>
+<body>
+    <div id="docs"></div>
+  
+    <script>
+        Prism.languages["pure-dango"] =
+        {
+            "keyword"   :   /\b(new|if|else|while|for|function|return)\b/,
+            "number"    :   /\b\d+\b/,
+            "function"  :   /\b(print|input|raise|root|concat|now|setPrecision)\b/,
+            "comment"   :   /#.*/,
+            "string"    :   /"(?:\\.|[^"\\])*"/,
+            "example"   :   /<example>.*?<\/example>/
+        };
+
+        const markdown = `
+# pure-dango
+
+## LANGUAGE CHARACTERISTICS
+- dynamically typed
+- variables default to \`null\`
+- 0 = false, non-zero = true
+- curly braces required for blocks
+- statements don't need to end with \`;\`. But it is highly recommended for stylistic reasons
+
+
+## KEYWORDS
+### \`new\`
+- Purpose:
+    - creates a new variable in pure-dango
+- Rules
+    - cannot redeclare existing variables
+    - variables are initialized as \`null\` until assigned
+
+Syntax:
+
+<pre><code class="language-pure-dango">
+new <example>name</example> = <example>value</example>
+</code></pre>
+
+Example:
+
+<pre><code class="language-pure-dango">
+new x; # declaration
+x = 5; # assignment
+</code></pre>
+
+### \`if\`
+- Purpose:
+    - if the condition is true it runs the code inside of it
+- Rules:
+    - requires curly braces around code block
+    - condition evaluates to truthy/falsy (0 = false, 1 = true)
+    - requires parentheses around condition
+  
+Syntax:
+
+<pre><code class="language-pure-dango">
+if (<example>condition</example>)
+{
+    <example>...</example>
+}
+</code></pre>
+
+Example:
+
+<pre><code class="language-pure-dango">
+new foo = 5;
+if (foo == 5)
+{
+    print("hi");
+}
+</code></pre>
+
+### \`else\`
+- Purpose:
+    - executes when preceding if condition is false
+- Rules
+    - must follow an \`if\` statement
+    - can be extended with \`else if\` for multiple conditions
+    - requires curly braces around code block
+    - requires parentheses around condition
+
+Syntax:
+<pre><code class="language-pure-dango">
+# unconditional
+else
+{
+    <example>...</example>
+} 
+# conditional
+else if (<example>condition</example>)
+{
+    <example>...</example>
+}
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+new foo = 5;
+if (foo < 5)
+{
+    print("foo");
+}
+
+else
+{
+    print("bar");
+}
+</code></pre>
+
+### \`while\`
+- Purpose:
+    - executes until its condition is false
+- Rules
+    - requires curly braces around code block
+    - condition evaluates to truthy/falsy (0 = false, 1 = true)
+    - requires parentheses around condition
+
+Syntax:
+<pre><code class="language-pure-dango">
+while (<example>condition</example>)
+{
+    <example>...</example>
+}
+</code></pre>
+
+Example:
+
+<pre><code class="language-pure-dango">
+new baz = 6;
+while (baz == 6)
+{
+    input("baz"); # will run forever
+}
+</code></pre>
+
+### \`for\`
+- Purpose:
+    - executes until its condition is false
+- Rules
+    - requires curly braces around code block
+    - condition evaluates to truthy/falsy (0 = false, 1 = true)
+    - requires parentheses around condition
+
+Syntax:
+<pre><code class="language-pure-dango">
+for (<example>initial</example>; <example>condition</example>; <example>update</example>)
+{
+    <example>...</example>
+}
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+new pmochi = 6;
+new pdango = pmochi * 3;
+for (new i = 0; i < pdango; i++) # since pdango is 18 (6*3 = 18) this loop will run 18 times
+{
+    print(i*pdango);
+}
+</code></pre>
+
+### \`break\`
+- Purpose:
+    - immediately stops the \`current loop\` and exits it
+- Rules
+    - can only be used inside of loops (\`for\`, \`while\`)
+
+Syntax:
+<pre><code class="language-pure-dango">
+break;
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+new x;
+x = 5;
+for (new i = 0; i < x; i++)
+{
+    if (i == 0)
+    {
+        break; # immediately stops the loop
+    }
+
+    print(i);
+}
+</code></pre>
+
+### \`continue\`
+- Purpose:
+    - immediately stops the \`current iteration\` of a loop and moves to the next one
+- Rules
+    - can only be used inside of loops (\`for\`, \`while\`)
+
+Syntax:
+
+<pre><code class="language-pure-dango">
+continue;
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+new fizz = 5;
+new buzz = 7;
+for (new i = 0; i < fizz + buzz; i += 2)
+{
+    if (i == 5)
+    {
+        continue; # skips this iteration and goes to the next one
+    }
+
+    print(i);
+}
+</code></pre>
+
+### \`function\`
+- Purpose:
+    - creates a new callable variable containing bytecode block
+- Rules
+    - cannot redeclare existing functions
+    - requires curly braces around code block
+    - requires parentheses around parameters
+    - parameters are dynamically typed
+    - functions return \`null\` if no \`return\` is used
+    - functions cannot chain. (i.e., \`f()()\` is not supported)
+- Function Semantics
+    - functions are stored as variables
+    - functions are assigned by reference
+    - functions can be:
+      - reassigned
+      - passed as arguments
+      - stored in variables
+      - returned from other functions
+
+Syntax:
+<pre><code class="language-pure-dango">
+function <example>name</example>(<example>parameters</example>)
+{
+    <example>...</example>
+}
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+function add(a, b)
+{
+    return a + b;
+}
+
+new op = add;
+print(op(2, 3));   # prints "5"
+
+add = 10;
+print(op(2, 3));   # still prints "5" because op still points to the original function
+</code></pre>
+
+### \`return\`
+- Purpose:
+    - exits a \`function\` and optionally returns a value
+- Rules
+    - \`;\` is needed after the value you want to return. (i.e. return 5;)
+    - if no value is provided, the function returns \`null\`
+    - immediately stops a function when called
+
+Syntax:
+<pre><code class="language-pure-dango">
+return <example>value</example>;
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+# with return
+function pow(a, b)
+{
+    return raise(a, b);
+}
+
+print(pow(2, 2)) # prints "4"
+
+# without return
+function greet(name)
+{
+    print("Hello, ", name);
+}
+
+greet("alice") # prints "Hello, alice"
+</code></pre>
+
+
+
+## BUILT IN FUNCTIONS
+### \`print\`
+- Purpose:
+    - prints text to the console
+
+Syntax:
+<pre><code class="language-pure-dango">
+print(<example>...</example>);
+</code></pre>
+Example:
+
+<pre><code class="language-pure-dango">
+new greet1 = "hello ";
+new greet2 = "world!";
+print(greet1, greet2); # prints out "hello world!"
+</code></pre>
+
+### \`now\`
+- Purpose:
+    - returns the current timestamp in milliseconds
+
+Syntax:
+<pre><code class="language-pure-dango">
+now();
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+new start = now();
+new iterations = 10000;
+
+new i = 0
+for (i = 0; i < iterations; i++)
+{
+    new temp = i * 2;
+}
+
+new end = now();
+
+print("Loop time: ", end-start);
+</code></pre>
+
+### \`setPrecision\`
+- Purpose:
+    - sets Decimal precision to <example>precision</example>
+- Rules:
+    - throws an error if the true value of <example>precision</example> isn't a number
+
+Syntax:
+<pre><code class="language-pure-dango">
+setPrecision(<example>precision</example>);
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+setPrecision(1000);
+
+new result = 1.01;
+
+new i = 0;
+for (i = 0; i < 6; i++)
+{
+    result += raise(result, i);
+}
+
+print(result); # prints "2.075335420483538463387032931950717991643172131537589056731451534099765834960354642594532814087239997711781608519664648636522078428226943812450152800863173055702053951473991251429359622489604075730331078526506212598922643479526468070637501458922142146609368329751088648017607092245660106731348096824975011379053724696576e+78" because Decimal has limits.
+</code></pre>
+
+### \`raise\`
+- Purpose:
+    - gets the <example>exponent</example>th power of <example>base</example>
+- Rules:
+    - the return value will be mixed
+    - throws an error if not exactly 2 or 3 parameters are provided
+    - the third parameter <example>useNativeMath</example> is optional but affects the result if provided.
+
+Syntax:
+<pre><code class="language-pure-dango">
+raise(<example>base</example>, <example>exponent</example>, <example>useNativeMath</example>);
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+# using precise math
+new base = 2;
+new exp = 100;
+
+print(raise(base, exp)); # prints "1267650600228229401496703205376"
+
+# using native JavaScript built in Math
+new base = 2;
+new exp = 100;
+
+print(raise(base, exp, true)); # prints "1.2676506002282294e+30"
+</code></pre>
+
+### \`root\`
+- Purpose:
+    - gets the <example>root</example>th root of <example>base</example>
+- Rules:
+    - the return value will be a Decimal
+    - throws an error if not exactly 2 or 3 parameters are provided
+    - the third parameter <example>useNativeMath</example> is optional but affects the result if provided.
+
+Syntax:
+<pre><code class="language-pure-dango">
+root(<example>base</example>, <example>root</example>, <example>useNativeMath</example>);
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+# using precise math
+new base = 1000000000000000000000000000000000000000000000000000000;
+new root = 2;
+
+print(root(base, root)); # prints "1000000000000000000000000000"
+
+# using native JavaScript built in Math
+new base = 1000000000000000000000000000000000000000000000000000000;
+new root = 2;
+
+print(root(base, root, true)); # prints "1e+27"
+</code></pre>
+
+### \`concat\`
+- Purpose:
+    - joins multiple values or strings into a single string
+
+Syntax:
+<pre><code class="language-pure-dango">
+concat(<example>...</example>);
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+new part1 = "pure";
+new separator = "-";
+new part2 = "dango";
+
+print(concat(part1, separator, part2));   # prints "pure-dango"
+</code></pre>
+
+### \`input\`
+- Purpose:
+    - joins all the arguments into a single string, then prompts the joined string to the console, and finally  returns the user's answer
+- Rules:
+    - all arguments are converted to strings before prompting
+
+Syntax:
+<pre><code class="language-pure-dango">
+input(<example>...</example>);
+</code></pre>
+
+Example:
+<pre><code class="language-pure-dango">
+new name = input("What is your name", "?: ");
+
+print("Hello ", name, "!");
+</code></pre>
+        `;
+        document.getElementById("docs").innerHTML = marked.parse(markdown, {sanitize: false});
+        Prism.highlightAll();
+    </script>
+</body>
+</html>

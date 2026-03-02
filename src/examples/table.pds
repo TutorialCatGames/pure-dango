@@ -1,0 +1,23 @@
+new counter = 1;
+new table = input("give the last number for the multiplication table: ");
+new until = input("until what number?: ");
+new current = 1;
+new breakCondition = false;
+
+while (current <= table)
+{
+    for (counter = 1; counter <= until; counter++)
+    {
+        new inputNum = input(current, " * ", counter, " = ?: ");
+
+        if (inputNum != current*counter)
+        {
+            print("the right answer to ", current, " * ", counter, " is ", current*counter, ".");
+            breakCondition = true;
+            break;
+        }
+    }
+
+    if (breakCondition) break;
+    current++;
+}

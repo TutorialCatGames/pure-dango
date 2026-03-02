@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>language.md</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+    <script>window.Prism = window.Prism || {}; Prism.manual = true;</script>
+    <script>
+        window.CONSTANTS = {
+            MaxTrigonometricDecimalPrecision    : 504,
+            MaxArcTrigonometricDecimalPrecision : 1015
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-markup.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        .token.comment    {color: grey;}
+        .token.string     {color: #88D57B;}
+        .token.keyword    {color: #7FBFFF;}
+        .token.function   {color: #E9C4E3;}
+        .token.number     {color: #BFE1B4;}
+        .token.example    {color: grey;}
+        .token.error      {color: #4EC9B0;}
+
+        pre code
+        {
+            white-space: pre;
+            font-family: monospace;
+            display: block;
+        }
+
+        body
+        {
+            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+            line-height: 1.5;
+            margin-left: 185px;
+            margin-top: 25px;
+            background-color: #1e1e1e;
+            color: #ddd;
+        }
+
+        h1, h2, h3
+        {
+            font-weight: 600;
+            font-family: -apple-system, BlinkMacSystemFont, 
+                "Segoe UI", Helvetica, Arial, sans-serif,
+                "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        h1, h2
+        {
+            border-bottom: 1px solid #FFFF;
+            padding-bottom: 0.15em;
+        }
+
+        h3
+        {
+            font-size: 1.5em;
+            padding-bottom: 0.15em;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 
+    &lt;  =    <
+    &gt;  =    >   
+    &#39; =    '
+    &amp; =    &
+-->
+
+<h1>pure-dango</h1>
+
+<h2>LANGUAGE CHARACTERISTICS</h2>
+<ul>
+    <li>dynamically typed</li>
+    <li>variables default to <em>null</em></li>
+    <li>0 = false, non-zero = true</li>
+    <li>curly braces are required for blocks</li>
+    <li>statements don't need to end with <em>;</em>. But it is highly recommended for stylistic reasons</li>
+    <li>variables have no fixed type. If a variable is reassigned to a different type, it becomes that type (e.g. A Number variable can be reassigned to a BigInt or String)</li>
+</ul>
+
+<h2>KEYWORDS</h2>
+
+<h3><em>new</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>creates a new variable in pure-dango</li>
+        </ul>
+    </li>
+    <li>Rules
+        <ul>
+            <li>cannot redeclare existing variables</li>
+            <li>variables are initialized as <em>null</em> until assigned</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+new <example>name</example> = <example>value</example>
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+new x; # declaration
+x = 5; # assignment
+</code></pre>
+
+<h3><em>if</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>if the condition is true it runs the code inside of it</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>without curly braces, the <code class="language-pure-dango">if</code> statement only applies to the following statement</li>
+            <li>condition evaluates to truthy/falsy (0 = false, 1 = true)</li>
+            <li>requires parentheses around condition</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+# for multiple statements 
+if (<example>condition</example>)
+{
+    <example>...</example>
+}
+
+# for a single statement 
+if (<example>condition</example>) <example>statement</example>
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+new foo = 5;
+if (foo == 5)
+{
+    print("hi");
+}
+</code></pre>
+
+<h3><em>else</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>executes when preceding if condition is false</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>must follow an <code class="language-pure-dango">if</code> statement</li>
+            <li>can be extended with <em>else if</em> for multiple conditions</li>
+            <li>without curly braces, the <code class="language-pure-dango">else</code> statement only applies to the following statement</li>
+            <li>if an <code class="language-pure-dango">if</code> condition follows the <code class="language-pure-dango">else</code> keyword, it requires parentheses around condition</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+# unconditional
+
+# for multiple statements 
+else
+{
+    <example>...</example>
+}
+
+# for a single statement 
+else <example>statement</example>
+
+# conditional
+else if (<example>condition</example>)
+{
+    <example>...</example>
+}
+
+# for a single statement 
+else if (<example>condition</example>) <example>statement</example>
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+new foo = 5;
+if (foo &lt; 5)
+{
+    print("foo");
+}
+
+else
+{
+    print("bar");
+}
+</code></pre>
+
+<h3><em>while</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>executes until its condition is false</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>without curly braces, the <code class="language-pure-dango">while</code> loop only applies to the following statement</li>
+            <li>condition evaluates to truthy/falsy (0 = false, 1 = true)</li>
+            <li>requires parentheses around condition</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+# for multiple statements 
+while (<example>condition</example>)
+{
+    <example>...</example>
+}
+
+# for a single statement
+while (<example>condition</example>) <example>statement</example>
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+new baz = 6;
+while (baz == 6) input("baz"); # will run forever
+</code></pre>
+
+<h3><em>for</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>executes until its condition is false</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>without curly braces, the <code class="language-pure-dango">for</code> loop only applies to the following statement</li>
+            <li>condition evaluates to truthy/falsy (0 = false, 1 = true)</li>
+            <li>requires parentheses around condition</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+# for multiple statements 
+for (<example>initial</example>; <example>condition</example>; <example>update</example>)
+{
+    <example>...</example>
+}
+
+# for a single statement
+for (<example>initial</example>; <example>condition</example>; <example>update</example>) <example>statement</example>
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+new mochi = 6;
+new dango = mochi * 3;
+
+for (new i = 0; i &lt; dango; i++)
+{
+    print(i * dango);
+}
+</code></pre>
+
+<h3><em>break</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>immediately stops the <em>current loop</em> and exits it</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>can only be used inside of loops (<em>for</em>, <em>while</em>)</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+break;
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+new x;
+x = 5;
+for (new i = 0; i &lt; x; i++)
+{
+    if (i == 0)
+    {
+        break; # immediately stops the loop
+    }
+
+    print(i);
+}
+</code></pre>
+
+<h3><em>continue</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>immediately stops the current iteration of a loop and moves to the next one</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>can only be used inside of loops (<em>for</em>, <em>while</em>)</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+continue;
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+new fizz = 5;
+new buzz = 7;
+for (new i = 0; i &lt; fizz + buzz; i += 2)
+{
+    if (i == 5)
+    {
+        continue; # skips this iteration and goes to the next one
+    }
+
+    print(i);
+}
+</code></pre>
+
+<h3><em>function</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>creates a new callable variable containing bytecode block</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>cannot redeclare existing functions</li>
+            <li>without curly braces, the <code class="language-pure-dango">function</code> statement only applies to the following statement</li>
+            <li>requires parentheses around parameters</li>
+            <li>parameters are dynamically typed</li>
+            <li>functions return <em>null</em> if no <em>return</em> is used</li>
+            <li>functions cannot chain. (i.e., f()() is not supported)</li>
+        </ul>
+    </li>
+    <li>Function Semantics:
+        <ul>
+            <li>functions are stored as variables</li>
+            <li>functions are assigned by reference</li>
+            <li>functions can be:
+                <ul>
+                    <li>reassigned</li>
+                    <li>passed as arguments</li>
+                    <li>stored in variables</li>
+                    <li>returned from other functions</li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+# function declarations:
+
+# for multiple statements 
+function <example>name</example>(<example>parameters</example>)
+{
+    <example>...</example>
+}
+
+# for a single statement
+function <example>name</example>(<example>parameters</example>) <example>statement</example>
+
+
+# function expressions:
+
+# for multiple statements 
+function(<example>parameters</example>)
+{
+    <example>...</example>
+}
+
+# for a single statement
+function(<example>parameters</example>) <example>statement</example>
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+function <function>add</function>(a, b)
+{
+    return a + b;
+}
+
+new op = <function>add</function>;
+print(op(2, 3));   # prints "5"
+
+add = 10;
+print(<function>op</function>(2, 3));   # still prints "5" because op still points to the original function
+</code></pre>
+
+<h3><em>return</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>exits a <em>function</em> and optionally returns a value</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li><em>;</em> is needed after the value you want to return. (i.e. return 5;)</li>
+            <li>if no value is provided, the function returns <em>null</em></li>
+            <li>immediately stops a function when called</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+return <example>value</example>;
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+# with return
+function <function>pow</function>(a, b)
+{
+    return raise(a, b);
+}
+
+print(<function>pow</function>(2, 2)) # prints "4"
+
+# without return
+function <function>greet</function>(name)
+{
+    print("Hello, ", name);
+}
+
+<function>greet</function>("alice") # prints "Hello, alice"
+</code></pre>
+
+<h3><em>import</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>runs the <code class="language-pure-dango"><example>filepath</example></code> after the <code class="language-pure-dango">import</code> keyword</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li><code class="language-pure-dango"><example>filepath</example></code> bases the path from the file running. (e.g. if you run the file in <em>C:\Users\example\Documents</em> and use <code class="language-pure-dango">import "test.pds"</code> it will import <em>C:\Users\example\Documents\test.pds</em>)</li>
+            <li>files won't be re-imported if you re-import one</li>
+            <li>files that dont exist will cause a <code class="language-pure-dango">FileNotFoundError</code></li>
+            <li>requires "<em>;</em>" after <code class="language-pure-dango"><example>filepath</example></code></li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+import "<example>filepath</example>";
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+import "math.pds";
+print(<function>cubrt</function>(27));   # prints "3" since 3³ is 27.
+</code></pre>
+
+<pre><code class="language-pure-dango">
+# math.pds
+function <function>cubrt</function>(number)
+{
+    return root(number, 3);
+}
+</code></pre>
+
+<h2>BUILT IN FUNCTIONS</h2>
+
+<h3><em>print</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>prints text to the console</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+print(<example>...args</example>);
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+new greet1 = "hello ";
+new greet2 = "world!";
+print(greet1, greet2); # prints out "hello world!"
+</code></pre>
+
+<h3><em>now</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>returns the current timestamp in milliseconds</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+now();
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+new start = now();
+new iterations = 10000;
+
+new i = 0
+for (i = 0; i &lt; iterations; i++)
+{
+    new temp = i * 2;
+}
+
+new end = now();
+
+print("Loop time: ", end-start);
+</code></pre>
+
+<h3><em>setPrecision</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>sets Decimal precision to <code class="language-pure-dango"><example>precision</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>throws an error if the true value of <code class="language-pure-dango"><example>precision</example></code> isn't a number</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+setPrecision(<example>precision</example>);
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+setPrecision(1000);
+
+new result = 1.01;
+
+new i = 0;
+for (i = 0; i &lt; 6; i++)
+{
+    result += raise(result, i);
+}
+
+print(result); # prints "2.07533542048...e+78" because Decimal has limits.
+</code></pre>
+
+<h3><em>raise</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>gets the <code class="language-pure-dango"><example>exponent</example></code>th power of <example>base</example></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>the return value will be mixed</li>
+            <li>throws an error if not exactly 2 or 3 parameters are provided</li>
+            <li>the third parameter <code class="language-pure-dango"><example>useNativeMath</example></code> is optional but affects the result if provided</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+raise(<example>base</example>, <example>exponent</example>, <example>useNativeMath</example>?);
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+# using precise math
+new base = 2;
+new exp = 100;
+
+print(raise(base, exp)); # prints "1267650600228229401496703205376"
+
+# using native JavaScript built in Math
+new base = 2;
+new exp = 100;
+
+print(raise(base, exp, true)); # prints "1.2676506002282294e+30"
+</code></pre>
+
+<h3><em>root</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>gets the <code class="language-pure-dango"><example>root</example></code>th root of <code class="language-pure-dango"><example>base</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>the return value will be a Decimal</li>
+            <li>throws an error if not exactly 2 or 3 parameters are provided</li>
+            <li>the third parameter <code class="language-pure-dango"><example>useNativeMath</example></code> is optional but affects the result if provided</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+root(<example>base</example>, <example>root</example>, <example>useNativeMath</example>?);
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+# using precise math
+new base = 1000000000000000000000000000000000000000000000000000000;
+new rt = 2;
+
+print(root(base, rt)); # prints "1000000000000000000000000000"
+
+# using native JavaScript built in Math
+new base = 1000000000000000000000000000000000000000000000000000000;
+new rt = 2;
+
+print(root(base, rt, true)); # prints "1e+27"
+</code></pre>
+
+<h3><em>concat</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>joins multiple values or strings into a single string</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+concat(<example>...</example>);
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+new part1 = "pure";
+new separator = "-";
+new part2 = "dango";
+
+print(concat(part1, separator, part2));   # prints "pure-dango"
+</code></pre>
+
+<h3><em>input</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>joins all the arguments into a single string, then prompts the joined string to the console, and finally returns the user's answer</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>all arguments are converted to strings before prompting</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+input(<example>...args</example>);
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+new name = input("What is your name", "?: ");
+
+print("Hello ", name, "!");
+</code></pre>
+
+<h3><em>sine</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>gets the <em>sine</em> (<em>sin</em>) of <code class="language-pure-dango"><example>x</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>takes input in radians</li>
+            <li>always returns a Decimal value</li>
+            <li>if Decimal precision is more than <code data-const="MaxTrigonometricDecimalPrecision"></code> it will switch to its own internal algorithm</li>
+            <li>results are accurate to the configured precision</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+sine(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new angle = 90;
+new result = sine(angle * 3.14159265358979 / 180);   # n * (3.14159265358979 / 180) converts degrees to radians
+print("sine of ", angle, " degrees = ", result);     # this will print out "sine of 90 degrees = 1" since sin 90 is 1
+</code></pre>
+
+<h3><em>cosine</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>gets the <em>cosine</em> (<em>cos</em>) of <code class="language-pure-dango"><example>x</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>takes input in radians</li>
+            <li>always returns a Decimal value</li>
+            <li>if Decimal precision is more than <code data-const="MaxTrigonometricDecimalPrecision"></code> it will switch to its own internal algorithm</li>
+            <li>results are accurate to the configured precision</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+cosine(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new angle = 0;
+new result = cosine(angle * 3.14159265358979 / 180);
+print("cosine of ", angle, " degrees = ", result);     # prints "cosine of 0 degrees = 1"
+</code></pre>
+
+<h3><em>tan</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>gets the <em>tangent</em> (<em>tan</em>) of <code class="language-pure-dango"><example>x</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>takes input in radians</li>
+            <li>always returns a Decimal value</li>
+            <li>if Decimal precision is more than <code data-const="MaxTrigonometricDecimalPrecision"></code> it will switch to its own internal algorithm</li>
+            <li>results are accurate to the configured precision</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+tan(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new angle = 45;
+new result = tan(angle * 3.14159265358979 / 180);
+print("tan of ", angle, " degrees = ", result);   # prints "tan of 45 degrees = ~1"
+</code></pre>
+
+<h3><em>arcsin</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>gets the <em>arcsin</em> (<em>sin</em><sup>-1</sup>) of <code class="language-pure-dango"><example>x</example></code> (e.g. <code class="language-pure-dango">arcsin(1)</code> returns 1.5707963267948966192 at precision 20. Which is 90 deg in radians)</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>input must be a dimensionless value in the range [-1, 1]</li>
+            <li>returns an angle in radians</li>
+            <li>always returns a Decimal value</li>
+            <li>returns an angle in radians in the range [-π/2, π/2]</li>
+            <li>if <code class="language-pure-dango"><example>x</example></code> is outside [-1, 1] it will throw an <code class="language-pure-dango">EvalError</code></li>
+            <li>if Decimal precision is more than <code data-const="MaxArcTrigonometricDecimalPrecision"></code> it will switch to its own internal algorithm</li>
+            <li><code class="language-pure-dango">arcsin</code> respects <code class="language-pure-dango">setPrecision</code></li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+arcsin(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new angle = 1;
+print(sine(arcsin(angle)));   # prints 1
+</code></pre>
+
+<h3><em>arccos</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>gets the <em>arccos</em> (<em>cos</em><sup>-1</sup>) of <code class="language-pure-dango"><example>x</example></code> (e.g. <code class="language-pure-dango">arccos(1)</code> returns 0 at any precision. Which is 0 deg in radians)</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>input must be a dimensionless ratio in the range [-1, 1]</li>
+            <li>returns an angle in radians</li>
+            <li>always returns a Decimal value</li>
+            <li>returns an angle in radians in the range [0, π]</li>
+            <li>if <code class="language-pure-dango"><example>x</example></code> is outside [-1, 1] it will throw an <code class="language-pure-dango">EvalError</code></li>
+            <li>if Decimal precision is more than <code data-const="MaxArcTrigonometricDecimalPrecision"></code> it will switch to its own internal algorithm</li>
+            <li><code class="language-pure-dango">arccos</code> respects <code class="language-pure-dango">setPrecision</code></li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+arccos(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new angle = -1;
+print(cosine(arccos(angle)));   # prints -1
+</code></pre>
+
+<h3><em>arctan</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>gets the <em>arctan</em> (<em>tan</em><sup>-1</sup>) of <code class="language-pure-dango"><example>x</example></code>. (e.g. <code class="language-pure-dango">arctan(1)</code> returns 0.7853981633974483 at precision 20. Which is 45 deg in radians)</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>takes a dimensionless ratio as input</li>
+            <li>returns an angle in radians</li>
+            <li>always returns a Decimal value</li>
+            <li>for very large inputs, the result converges toward π/2</li>
+            <li>if Decimal precision is more than <code data-const="MaxArcTrigonometricDecimalPrecision"></code> it will switch to its own internal algorithm</li>
+            <li><code class="language-pure-dango">arctan</code> respects <code class="language-pure-dango">setPrecision</code></li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+arctan(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new angle = 45;
+print(tan(arctan(angle)));   # prints ~45
+</code></pre>
+
+<h3><em>getPi</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>gets <code class="language-pure-dango"><example>customPrecision</example></code> digits of <em>π</em>. If no parameters are given it will use the current Decimal precision</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>if <code class="language-pure-dango"><example>customPrecision</example></code> is less than or equal to 0, it will throw an <code class="language-pure-dango">EvalError</code></li>
+            <li>if the type of <code class="language-pure-dango"><example>customPrecision</example></code> is not Number, Decimal, or BigInt, it will throw an <code class="language-pure-dango">EvalError</code></li>
+            <li>computation time scales with precision</li>
+            <li>if Decimal precision is more than <code data-const="MaxArcTrigonometricDecimalPrecision"></code> it will switch to its own internal algorithm</li>
+            <li>returns <code class="language-pure-dango"><example>customPrecision</example></code> digits total (1 integer digit + <code class="language-pure-dango"><example>customPrecision</example></code> decimal digits)</li>
+            <li><code class="language-pure-dango"><example>customPrecision</example></code> does not permanently affect the current Decimal precision</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+getPi(<example>customPrecision</example>?);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+# without custom precision
+setPrecision(50);
+print(getPi());     # prints "3.1415926535897932384626433832795028841971693993751"
+
+# with custom precision
+setPrecision(50);
+print(getPi(1));   # prints "3"
+</code></pre>
+
+<h3><em>getE</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>gets <code class="language-pure-dango"><example>customPrecision</example></code> digits of <em>Euler's Number</em>. If no parameters are given it will use the current Decimal precision</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>if <code class="language-pure-dango"><example>customPrecision</example></code> is less than or equal to 0, it will throw an <code class="language-pure-dango">EvalError</code></li>
+            <li>if the type of <code class="language-pure-dango"><example>customPrecision</example></code> is not Number, Decimal, or BigInt, it will throw an <code class="language-pure-dango">EvalError</code></li>
+            <li>computation time scales with precision</li>
+            <li>if Decimal precision is more than <code data-const="MaxArcTrigonometricDecimalPrecision"></code> it will switch to its own internal algorithm</li>
+            <li>returns <code class="language-pure-dango"><example>customPrecision</example></code> digits total (1 integer digit + <code class="language-pure-dango"><example>customPrecision</example></code> decimal digits)</li>
+            <li><code class="language-pure-dango"><example>customPrecision</example></code> does not permanently affect the current Decimal precision</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+getE(<example>customPrecision</example>?);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+# without custom precision
+setPrecision(50);
+print(getE());     # prints "2.7182818284590452353602874713526624977572470936999"
+
+# with custom precision
+setPrecision(50);
+print(getE(1));   # prints "2"
+</code></pre>
+
+<h3><em>exp</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>returns <em>e</em><sup><code class="language-pure-dango"><example>x</example></code></sup>. <code class="language-pure-dango"><example>x</example></code> being the exponent</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>if the type of <code class="language-pure-dango"><example>x</example></code> is not Number, Decimal, or BigInt, it will throw an <code class="language-pure-dango">EvalError</code></li>
+            <li>computation time scales with precision</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+exp(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+setPrecision(50);
+print(exp(2)); # prints "7.3890560989306502272304274605750078131803155705518"
+</code></pre>
+
+<h3><em>log</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>gets the log of <code class="language-pure-dango"><example>x</example></code> with an optional base <code class="language-pure-dango"><example>base</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li><code class="language-pure-dango">log</code> always returns a Decimal</li>
+            <li><code class="language-pure-dango"><example>base</example></code> is optional but affects the result</li>
+            <li><code class="language-pure-dango">log</code> with only one argument (<code class="language-pure-dango"><example>x</example></code>) will use natural log with base e</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+log(<example>x</example>, <example>base</example>?);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+# without base
+new value = 100;
+print(log(value)) # using base e with precision 20 it prints "4.605170185988091368"
+
+# with base
+new value = 100;
+print(log(value, 10)) # using base 10 with precision 20 it prints "2"
+</code></pre>
+
+<h3><em>abs</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>returns the absolute value of <code class="language-pure-dango"><example>x</example></code>.</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>if <code class="language-pure-dango"><example>x</example></code> is not type Decimal, BigInt, or Number, it will throw an <code class="language-pure-dango">EvalError</code></li>
+            <li>requires exactly 1 argument</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+abs(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new negative = -1200132;
+print(abs(negative));   # prints "1200132"
+
+new positive = 1200132;
+print(abs(positive));   # prints "1200132"
+</code></pre>
+
+<h3><em>ceil</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>rounds <code class="language-pure-dango"><example>x</example></code> up to the nearest integer</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>whole numbers are returned as-is</li>
+            <li>if <code class="language-pure-dango"><example>x</example></code> is not type Decimal, BigInt, or Number, it will throw an <code class="language-pure-dango">EvalError</code></li>
+            <li>requires exactly 1 argument</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+ceil(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+print(ceil(4.3));    # prints "5"
+print(ceil(4.9));    # prints "5"
+print(ceil(4.0));    # prints "4"
+print(ceil(-4.5));   # prints "-4"
+</code></pre>
+
+<h3><em>floor</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>rounds <code class="language-pure-dango"><example>x</example></code> down to the nearest integer</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>whole numbers are returned as-is</li>
+            <li>if <code class="language-pure-dango"><example>x</example></code> is not type Decimal, BigInt, or Number, it will throw an <code class="language-pure-dango">EvalError</code></li>
+            <li>requires exactly 1 argument</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+floor(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="language-pure-dango">
+print(floor(4.3));    # prints "4"
+print(floor(4.9));    # prints "4"
+print(floor(5.0));    # prints "5"
+print(floor(-4.5));   # prints "-5"
+</code></pre>
+
+<h3><em>round</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>rounds <code class="language-pure-dango"><example>x</example></code> to the nearest integer</li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>numbers thats decimal point is less than 5 will be rounded down. (e.g. <code class="language-pure-dango">round(0.49)</code> will return 0)</li>
+            <li>numbers thats decimal point is greater than or equal to 5 will be rounded up. (e.g. <code class="language-pure-dango">round(0.5)</code> will return 1)</li>
+            <li>if <code class="language-pure-dango"><example>x</example></code> is not type Decimal, BigInt, or Number, it will throw an <code class="language-pure-dango">EvalError</code></li>
+            <li>requires exactly 1 argument</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+round(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+print(round(4.4));    # prints "4"
+print(round(4.5));    # prints "5"
+print(round(4.0));    # prints "4"
+print(round(-4.5));   # prints "-4"
+</code></pre>
+
+<h3><em>random</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>returns a random number with the minimum value of <code class="language-pure-dango"><example>min</example></code>, and the maximum value of <code class="language-pure-dango"><example>max</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>if <code class="language-pure-dango"><example>returnInteger</example></code> is true, it will return an integer. Else, it will return a Decimal.</li>
+            <li>if no parameter is given, random returns a number 0 to 1.</li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+random(<example>min</example>?, <example>max</example>?, <example>returnInteger</example>?);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new num1;
+new num2;
+new num3;
+
+num1 = random(1, 9, true);
+num2 = random(1, 9, true);
+num3 = random(1, 9, true);
+
+if (num1 == 7 &amp;&amp; num2 == 7 &amp;&amp; num3 == 7)
+{
+    print("777");
+}
+
+else
+{
+    print("no: ", num1, ", ", num2, ", ", num3);
+}
+</code></pre>
+
+<h3><em>min</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>returns the lowest number in <code class="language-pure-dango"><example>...values</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>if no argument is given it will throw a <code class="language-pure-dango">SyntaxError</code></li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+min(<example>...values</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new x = random(0, 100);
+new y = random(0, 100);
+
+new val = min(x, y);
+
+print(`The lowest number is: `, val);
+</code></pre>
+
+<h3><em>max</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>returns the greatest number in <code class="language-pure-dango"><example>...values</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>if no argument is given it will throw a <code class="language-pure-dango">SyntaxError</code></li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+max(<example>...values</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new x = random(0, 100);
+new y = random(0, 100);
+
+new val = max(x, y);
+
+print(`The greatest number is: `, val);
+</code></pre>
+
+<h3><em>len</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>returns the length of <code class="language-pure-dango"><example>x</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>if <code class="language-pure-dango"><example>array</example></code> is not type Array or String it will throw a <code class="language-pure-dango">TypeError</code></li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+len(<example>x</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new list = [1, 2];
+
+push(list, 3, 4);
+
+print(len(list));   # prints "4"
+</code></pre>
+
+<h3><em>push</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>appends all the values in <code class="language-pure-dango"><example>...args</example></code> to the end of <code class="language-pure-dango"><example>array</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>if <code class="language-pure-dango"><example>array</example></code> is not given or is not type Array it will throw a <code class="language-pure-dango">TypeError</code></li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+push(<example>array</example>, <example>...args</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new list = [1, 2];
+
+push(list, 3, 4);
+
+print(list);   # prints [1, 2, 3, 4]
+</code></pre>
+
+<h3><em>pop</em></h3>
+<ul>
+    <li>Purpose:
+        <ul>
+            <li>returns and removes the last element from <code class="language-pure-dango"><example>array</example></code></li>
+        </ul>
+    </li>
+    <li>Rules:
+        <ul>
+            <li>if <code class="language-pure-dango"><example>array</example></code> is not given or is not type Array it will throw a <code class="language-pure-dango">TypeError</code></li>
+        </ul>
+    </li>
+</ul>
+
+<p>Syntax:</p>
+<pre><code class="language-pure-dango">
+pop(<example>array</example>);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-pure-dango">
+new list = [1, 2];
+
+push(list, 3, 4);
+
+print(pop(list));   # prints "4"
+</code></pre>
+
+<h2>ARITHMETIC</h2>
+
+<b>Note:</b> "Integer" and "Float" are not separate types, they are both Number. Floats always produce Decimal regardless of the other operand.
+
+<h3>+</h3>
+<ul>
+    <li>Type Rules:
+        <ul>
+            <li>Decimal + anything  -> Decimal</li>
+            <li>Float   + anything  -> Decimal</li>
+
+            <li>BigInt  + BigInt    -> BigInt</li>
+            <li>BigInt  + Integer   -> BigInt</li>
+
+            <li>Number  + Number    -> Number</li>
+
+            <li>String  + anything  -> TypeError. Use <code class="language-pure-dango">concat</code> to join strings</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>-</h3>
+<ul>
+    <li>Type Rules:
+        <ul>
+            <li>Decimal - anything  -> Decimal</li>
+            <li>Float   - anything  -> Decimal</li>
+
+            <li>BigInt  - BigInt    -> BigInt</li>
+            <li>BigInt  - Integer   -> BigInt</li>
+
+            <li>Number  - Number    -> Number</li>
+
+            <li>String  - anything  -> TypeError</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>/</h3>
+<ul>
+    <li>Type Rules:
+        <ul>
+            <li><b>Note:</b> Number / Number stores the result as a Number even if it has decimals. It becomes a Decimal if you do arithmetic with it</li>
+            
+            <li>Decimal / anything  -> Decimal</li>
+            <li>Float   / anything  -> Decimal</li>
+
+            <li>BigInt  / BigInt    -> BigInt (truncates toward 0, e.g. 7 / 2 = 3) </li>
+            <li>BigInt  / Integer   -> BigInt</li>
+
+            <li>Number  / Number    -> Number</li>
+
+            <li>String  / anything  -> TypeError</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>*</h3>
+<ul>
+    <li>Type Rules:
+        <ul>
+            <li>Decimal * anything  -> Decimal</li>
+            <li>Float   * anything  -> Decimal</li>
+
+            <li>BigInt  * BigInt    -> BigInt</li>
+            <li>BigInt  * Integer   -> BigInt</li>
+
+            <li>Number  * Number    -> Number</li>
+
+            <li>String  * anything  -> TypeError</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>%</h3>
+<ul>
+    <li>Type Rules:
+        <ul>
+            <li><b>Note: </b>BigInt % BigInt -> BigInt (always non-negative when divisor is positive)</li>
+            <li>Decimal % anything  -> Decimal</li>
+            <li>Float   % anything  -> Decimal</li>
+
+            <li>BigInt  % BigInt    -> BigInt</li>
+            <li>BigInt  % Integer   -> BigInt</li>
+
+            <li>Number  % Number    -> Number</li>
+
+            <li>String  % anything  -> TypeError</li>
+        </ul>
+    </li>
+</ul>
+
+<script>
+    Prism.languages["pure-dango"] =
+    {
+        "keyword"  : /\b(true|false|new|if|else|while|for|break|continue|function|return|import)\b/,
+        "number"   : /\b\d+\b/,
+        "function" : /\b(print|input|raise|root|concat|now|setPrecision|sine|cosine|tan|random|ceil|floor|round|log|abs|min|max|arcsin|arccos|arctan|getPi|getE|exp)\b/,
+        "string"   : {pattern: /"(?:\\.|[^"\\])*"|'(?:\\.|[^"\\])*'|`(?:\\.|[^"\\])*`/, greedy: true},
+        "comment"  : {pattern: /#.*/, greedy: true},
+        "error"    : /\b(FileNotFoundError|FunctionError|ConstantAssignmentOperator|BreakError|ContinueError|StackError|MissingStackTokenError|DivisionByZero|FunctionCallError|ChainedFunctionCallError|ChainedIncDecError|InvalidPostfixError|AssignmentError|UnexpectedTokenError|MissingTokenError|MissingRightSide|NegativeExponentError|EvalError|SyntaxError)\b/
+    };
+    
+    Prism.hooks.add('before-highlight', function(env)
+    {
+        env.code = env.element.innerHTML
+            .replace(/<keyword>(.*?)<\/keyword>/g,     "PD_KW$1_PD")
+            .replace(/<number>(.*?)<\/number>/g,       "PD_NM$1_PD")
+            .replace(/<function>(.*?)<\/function>/g,   "PD_FN$1_PD")
+            .replace(/<string>(.*?)<\/string>/g,       "PD_STR$1_PD")
+            .replace(/<example>(.*?)<\/example>/g,     "PD_EX$1_PD")
+            .replace(/<comment>(.*?)<\/comment>/g,     "PD_CM$1_PD");
+    });
+
+    Prism.hooks.add('after-highlight', function(env)
+    {
+        env.element.innerHTML = env.element.innerHTML
+            .replace(/PD_KW(.*?)_PD/g,    "<span class='token keyword' >$1</span>")
+            .replace(/PD_NM(.*?)_PD/g,    "<span class='token number'  >$1</span>")
+            .replace(/PD_FN(.*?)_PD/g,    "<span class='token function'>$1</span>")
+            .replace(/PD_STR(.*?)_PD/g,   "<span class='token string'  >$1</span>")
+            .replace(/PD_EX(.*?)_PD/g,    "<span class='token example' >$1</span>")
+            .replace(/PD_CM(.*?)_PD/g,    "<span class='token comment' >$1</span>")
+            .replace(/&amp;lt;/g, '&lt;')
+            .replace(/&amp;gt;/g, '&gt;')
+            .replace(/&amp;#39;/g, '&#39;')
+            .replace(/&amp;amp;/g, '&amp;');
+    });
+
+    for (const element of document.querySelectorAll("[data-const]"))
+    {
+        const name = element.dataset.const;
+        element.textContent = window.CONSTANTS[name];
+    }
+
+    Prism.highlightAll();
+</script>
+
+</body>
+</html>

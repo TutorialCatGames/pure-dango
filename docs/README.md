@@ -1,4 +1,4 @@
-# pure-dango v1.00
+# pure-dango v0.9.2.
 
 A simple language built from JavaScript.
 
@@ -15,3 +15,4 @@ then run src/scripts/build.js
 
 ## Language Guide
 For full pure-dango language details, see [language details](https://tutorialcatgames.github.io/pure-dango/)
+

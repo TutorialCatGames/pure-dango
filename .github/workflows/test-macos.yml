@@ -22,8 +22,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Make launcher executable
-        run: chmod +x dist/PureDangoLauncher-macos
+      - name: Build macOS launcher
+        run: node src/scripts/build.js
 
       - name: Register pure-dango command
         run: |

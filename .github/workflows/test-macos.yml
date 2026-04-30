@@ -26,5 +26,8 @@ jobs:
       - name: Install tsx
         run: npm install -g tsx
 
-      - name: Run test script
-        run: tsx src/index.ts docs/answer_keys/test.pds
+      - name: Install pure-dango globally
+        run: npm install -g .
+
+      - name: Test pure-dango command
+        run: pure-dango docs/answer_keys/test.pds

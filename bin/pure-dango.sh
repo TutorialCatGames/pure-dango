@@ -1,5 +1,4 @@
 #!/bin/bash
-# Resolve symlinks to get the actual script location
 SCRIPT_PATH="${BASH_SOURCE[0]}"
 while [ -L "$SCRIPT_PATH" ]; do
     SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
@@ -8,7 +7,19 @@ while [ -L "$SCRIPT_PATH" ]; do
 done
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-LAUNCHER="$PROJECT_ROOT/dist/PureDangoLauncher-linux"
+
+PLATFORM="$(uname -s)"
+ARCH="$(uname -m)"
+
+if [[ "$PLATFORM" == "Darwin" ]]; then
+    if [[ "$ARCH" == "arm64" ]]; then
+        LAUNCHER="$PROJECT_ROOT/dist/PureDangoLauncher-macos-arm64"
+    else
+        LAUNCHER="$PROJECT_ROOT/dist/PureDangoLauncher-macos"
+    fi
+else
+    LAUNCHER="$PROJECT_ROOT/dist/PureDangoLauncher-linux"
+fi
 
 if [[ "$1" == "-help" || "$1" == "--help" || "$1" == "-h" ]]; then
     echo "Usage: pure-dango [file]"

@@ -25,6 +25,9 @@ jobs:
       - name: Build macOS launcher
         run: node src/scripts/build.js
 
+      - name: Check dist folder
+        run: ls -la dist/
+
       - name: Register pure-dango command
         run: |
           chmod +x bin/pure-dango.sh

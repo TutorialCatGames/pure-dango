@@ -9,14 +9,9 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PLATFORM="$(uname -s)"
-ARCH="$(uname -m)"
 
 if [[ "$PLATFORM" == "Darwin" ]]; then
-    if [[ "$ARCH" == "arm64" ]]; then
-        LAUNCHER="$PROJECT_ROOT/dist/PureDangoLauncher-macos-arm64"
-    else
-        LAUNCHER="$PROJECT_ROOT/dist/PureDangoLauncher-macos"
-    fi
+    LAUNCHER="$PROJECT_ROOT/dist/PureDangoLauncher-macos"
 else
     LAUNCHER="$PROJECT_ROOT/dist/PureDangoLauncher-linux"
 fi

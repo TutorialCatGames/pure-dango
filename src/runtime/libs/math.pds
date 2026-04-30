@@ -1,0 +1,86 @@
+import "std.pds";
+function maxArguments(maxArgs, args, name)
+{
+    new plural = maxArgs == 1 
+    	? " argument" 
+        : " arguments";
+
+    if (maxArgs < 1 && len(args) > 0)
+    	throwerror("Error", concat('Function "', name, '" ', "does not take any arguments"));
+    else if (len(args) > maxArgs)
+        throwerror("Error", concat('Function "', name, '" ', "only takes ", maxArgs, plural));
+}
+
+new CACHE =
+{
+    pi: []
+}
+
+function ChudnovskySeries(precision)
+{
+    new terms = ceil(precision / 14) + 10;
+
+    new t1 = now();
+    new result = chudnovsky(terms);
+    new t2 = now();
+
+    new Q = result[1];
+    new T = result[2];
+
+    new den = 13591409 * Q + T;
+    new ratio = bigintdiv(Q, den);
+    new c = tofloat("426880") * sqrt(tofloat("10005"));
+    return c * ratio;
+}
+
+function truncatePi(π, precision)
+{
+    new str = tostr(π);
+    new result = "";
+    new i = 0;
+    for (; i < precision + 1; i++)
+        result = concat(result, str[i]);
+
+    return tofloat(result);
+}
+
+function getPi(precision)
+{
+    new workingPrecision = ceil(precision * 3.6) + 500;
+    new savedPrecision = getPrecision();
+    setPrecision(workingPrecision);
+
+    new index = precision;
+
+    if (!CACHE.pi[index])
+    {
+        new π_float = ChudnovskySeries(workingPrecision);
+        CACHE.pi[index] = tostr(π_float);
+    }
+
+    new result = String.slice(CACHE.pi[index], 0, precision + 2);
+    
+    setPrecision(savedPrecision);
+    return result;
+}
+
+function getE(precision)
+{
+    new workingPrecision = ceil(precision * 3.32) + 200000;
+    new savedPrecision   = getPrecision();
+    setPrecision(workingPrecision);
+
+    new terms    = precision + 10;
+    new computed = ecompute(terms);
+
+    new P = computed[0];
+    new Q = computed[1];
+
+    new denominator = Q;
+    new numerator   = P + Q;
+    new e_float     = bigintdiv(numerator, denominator);
+    new str         = floattostr(e_float, precision + 2000);
+    new result = String.slice(str, 0, precision + 2);
+    setPrecision(savedPrecision);
+    return result;
+}

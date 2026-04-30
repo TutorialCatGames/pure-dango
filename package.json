@@ -1,0 +1,43 @@
+{
+    "name": "pure-dango",
+    "version": "1.2.1",
+    "type": "module",
+    "description": "A simple programming language built in JavaScript",
+    "license": "UNLICENSED",
+
+    "bin": {
+        "pure-dango": "src/index.ts"
+    },
+    "scripts": {
+        "dev"     : "tsx src/index.ts",
+        "prebuild": "node src/scripts/libs.cjs",
+        "build"   : "node src/scripts/build.js"
+    },
+    "dependencies": {
+        "gmp-wasm": "^1.3.2"
+    },
+    "devDependencies" : {
+        "@types/node": "^25.5.0",
+        "pkg"        : "^5.8.1",
+        "typescript" : "^5.9.3"
+    },
+    "pkg": {
+        "scripts": [
+            "src/scripts/launcher.cjs"
+        ],
+        "assets": [
+            "package.json",
+            "node_modules/**/*",
+            "src/index.ts",
+            "src/core/**/*.ts",
+            "src/runtime/**/*.js"
+        ],
+        "targets": [
+            "node18-win-x64",
+            "node18-macos-x64",
+            "node18-macos-arm64",
+            "node18-linux-x64",
+            "node18-linux-arm64"
+        ]
+    }
+}

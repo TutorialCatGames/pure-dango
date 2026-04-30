@@ -1,0 +1,74 @@
+# all errors.
+class Error
+{
+    constructor(x)
+    {
+        if (typeof(x) != "string")
+            throwerror("Error", concat('Parameter "__INIT__" of class "Error" must be type String. But got "', x, '"'));
+            
+        this.__INIT__ = x;
+        this.name = "Error";
+    }
+
+    throw(message)
+    {
+        if (message)
+            throwerror(this.name, message);
+        else
+            throwerror(this.name, this.__INIT__);
+    }
+}
+
+class TypeError extends Error
+{
+    constructor(x)
+    {
+        super(x);
+        this.name = "TypeError";
+    }
+}
+
+class ValueError extends Error
+{
+    constructor(x)
+    {
+        super(x);
+        this.name = "ValueError";
+    }
+}
+
+class IndexError extends Error
+{
+    constructor(x)
+    {
+        super(x);
+        this.name = "IndexError";
+    }
+}
+
+class NotImplementedError extends Error
+{
+    constructor(x)
+    {
+        super(x);
+        this.name = "NotImplementedError";
+    }
+}
+
+class RangeError extends Error
+{
+    constructor(x)
+    {
+        super(x);
+        this.name = "RangeError";
+    }
+}
+
+class InternalError extends Error
+{
+    constructor(x)
+    {
+        super(x);
+        this.name = "InternalError";
+    }
+}

@@ -1,0 +1,1183 @@
+# all normal classes needed. 
+# Don't use BaseArray. Import this from stdtyp.pds using import internal "stdtyp.pds" not directly.
+
+import "errors.pds";
+
+class BaseArray
+{
+    constructor(x) 
+        this.__INIT__ = x
+
+    indexOf(x)
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new xLength = len(x);
+        new isX = true;
+        
+        new i, j = 0, 0;
+        new xIndex = 0;
+        for (i = 0; i < length; i++)
+        {
+            isX = true;
+            for (j = 0; j < xLength; j++)
+            {
+                if (val[j + i] != x[j])
+                {
+                    isX = false;
+                    break;
+                }
+            }
+
+            if (isX)
+                return i;
+        }
+
+        return -1;
+    }
+
+    length()
+        return len(this.__INIT__);
+
+    toString()
+    {
+        new result = "";
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            result = concat(result, val[i])
+        
+        return result;
+    }
+
+    isEmpty()
+        return len(this.__INIT__) == 0;
+
+    first()
+        return this.__INIT__[0];
+    
+    last()
+    {
+        new val = this.__INIT__;
+        return val[len(val) - 1];
+    }
+}
+
+function QuickSort(val)
+{
+    new length = len(val);
+    if (length <= 1)
+        return val;
+
+    new pivot = val[0];
+    new leftArray = [];
+    new rightArray = [];
+
+    new i = 0;
+    new item;
+    for (i = 1; i < length; i++)
+    {
+        item = val[i];
+
+        if (item <= pivot)
+            push(leftArray, item);
+        else
+            push(rightArray, item);
+    }
+
+    new sortedLeft = QuickSort(leftArray);
+    new sortedRight = QuickSort(rightArray);
+
+    new result = [];
+    new leftLength = len(leftArray);
+    new rightLength = len(rightArray);
+
+    new j = 0;
+    for (j = 0; j < leftLength; j++)
+        push(result, sortedLeft[j])
+
+    push(result, pivot);
+
+    for (j = 0; j < rightLength; j++)
+        push(result, sortedRight[j])
+
+    return result;
+}
+
+class Array extends BaseArray
+{
+    constructor(x)
+    {
+        x = toarr(x);
+        super(x);
+    }
+
+    indexOf(x)
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (val[i] == x)
+                return i;
+
+        return -1;
+    }
+
+    push(x)
+        push(this.__INIT__, x)
+    
+    pop()
+        return pop(this.__INIT__);
+
+    set(i, y)
+    {
+        new result = [];
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new j = 0;
+        for (j = 0; j < length; j++)
+        {
+            if (j == i)
+                push(result, y)
+            else
+                push(result, val[j]);
+        }
+
+        this.__INIT__ = result;
+    }
+
+    insert(i, y)
+    {
+        new result = [];
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new j = 0;
+        for (j = 0; j < length; j++)
+        {
+            if (j == i)
+                push(result, y);
+
+            push(result, val[j]);
+        }
+
+        this.__INIT__ = result;
+    }
+
+    remove(i)
+    {   
+        new result = [];
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new j = 0;
+        for (j = 0; j < length; j++)
+        {
+            if (j == i)
+                continue;
+            
+            push(result, val[j]);
+        }
+
+        this.__INIT__ = result;
+    }
+
+    join(x)
+    {
+        new result = "";
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            concat(result, val[i]);
+            if (i < length - 1)
+                concat(result, x);
+        }
+        
+        return result;
+    }
+
+    slice(x, y)
+    {
+        new result = [];
+
+        new val = this.__INIT__;
+
+        if (y == undefined || y == null)
+            y = len(val);
+
+        new i = 0;
+        for (i = x; i < y; i++)
+            push(result, val[i]);
+
+        return result;
+    }
+
+    contains(x)
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        new contains = false;
+        for (i = 0; i < length; i++)
+            if (x == val[i]) 
+                contains = true;
+
+        return contains;
+    }
+
+    reverse()
+    {
+        new result = [];
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = length-1; i >= 0; i--)
+            push(result, val[i]);
+
+        return result;
+    }
+
+    concat(x)
+    {
+        new result = this.__INIT__;
+        
+        new xLength = len(x);
+
+        new i = 0;
+        for (i = 0; i < xLength; i++)
+            push(result, x[i]);
+        
+        return result;
+    }
+
+    unique()
+    {
+        new result = [];
+        new seen = {};
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        new current;
+        for (i = 0; i < length; i++)
+        {
+            current = val[i];
+            if (seen[current] == undefined)
+            {
+                push(result, current);
+                seen[current] = true;
+            }
+        }
+
+        return result;
+    }
+
+    sort()
+        return QuickSort(this.__INIT__);
+
+    map(fn)
+    {
+        new result = [];
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            push(result, fn(val[i]));
+        
+        return result;
+    }
+
+    filter(fn)
+    {
+        new result = [];
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (fn(val[i]))
+                push(result, val[i]);
+
+        return result;
+    }
+
+    reduce(fn, init)
+    {
+        new accumulator = init;
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            accumulator = fn(accumulator, val[i]);
+
+        return accumulator;
+    }
+
+    zip(x)
+    {
+        if (typeof(x) != "array")
+            TypeError.throw('Parameter x of function "zip" should be type "Array". But got "', x, '"');
+
+        new result = [];
+        new val = this.__INIT__;
+
+        new length;
+        if (len(x) > len(val))
+            length = len(val);
+        else
+            length = len(x);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            push(result, [val[i], x[i]]);
+
+        return result;
+    }
+
+    intersection(x)
+    {
+        if (typeof(x) != "array")
+            TypeError.throw('Parameter x of function "intersection" should be type "Array". But got "', x, '"');
+
+        new result = [];
+        new val = this.__INIT__;
+
+        new length = len(x);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (this.contains(x[i]))
+                push(result, x[i]);
+
+        return result;
+    }
+
+    difference(x)
+    {
+        if (typeof(x) != "array")
+            TypeError.throw('Parameter x of function "difference" should be type "Array". But got "', x, '"');
+
+        new result = [];
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new tempX = inst Array(x);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (!tempX.contains(val[i]))
+                push(result, val[i]);
+
+        return result;
+    }
+
+    rotate(x)
+    {
+        if (typeof(x) != "number")
+            TypeError.throw('Parameter x of function "rotate" should be type "Number". But got "', x, '"');
+
+        new result = [];
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        x = x % length;
+
+        new i = 0;
+        for (i = x; i < length; i++)
+            push(result, val[i]);
+
+        for (i = 0; i < x; i++)
+            push(result, val[i]);
+
+        return result;
+    }
+
+    min()
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new minimum = val[0];
+    
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (val[i] < minimum)
+                minimum = val[i];
+        
+        return minimum;
+    }
+
+    max()
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new maximum = val[0];
+    
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (val[i] > maximum)
+                maximum = val[i];
+        
+        return maximum;
+    }
+
+    chunk(x)
+    {
+        if (typeof(x) != "number")
+            TypeError.throw('Parameter x of function "chunk" should be type "Number". But got "', x, '"');
+
+        new chunks = [];
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i, j = 0, 0;
+        while (i < length)
+        {
+            new items = [];
+            for (j = i; j < i + x && j < length; j++)
+                push(items, val[j]);
+
+            push(chunks, items);
+            i += x;
+        }
+
+        return chunks;
+    }
+
+    flat()
+    {
+        new result = [];
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            if (typeof(val[i]) == "array")
+            {
+                new inner = inst Array(val[i]);
+                new flattened = inner.flat();
+                new flatLength = len(flattened);
+
+                new j = 0;
+                for (j = 0; j < flatLength; j++)
+                    push(result, flattened[j]);
+            }
+            else
+                push(result, val[i]);
+        }
+
+        return result;
+    }
+
+    flatten(x)
+    {
+        new result = [];
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            if (typeof(val[i]) == "array")
+            {
+                if (x <= 0)
+                    push(result, val[i]);
+                else
+                {
+                    new inner = inst Array(val[i]);
+
+                    new flattened  = inner.flatten(x - 1);
+                    new flatLength = len(flattened);
+
+                    new j = 0;
+                    for (j = 0; j < flatLength; j++)
+                        push(result, flattened[j]);
+                }
+            }
+            else
+                push(result, val[i]);
+        }
+
+        return result;
+    }
+
+    find(fn)
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (fn(val[i]))
+                return val[i];
+
+        return null;
+    }
+
+    findIndex(fn)
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (fn(val[i]))
+                return i;
+
+        return -1;
+    }
+
+    forEachWithIndex(fn)
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            fn(val[i], i);
+    }
+
+    countBy(fn)
+    {
+        new result = {};
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            new returned = fn(val[i]);
+            if (result[returned] == null || result[returned] == undefined)
+                result[returned] = 1;
+            else
+                result[returned]++;
+        }
+
+        return result;
+    }
+
+    groupBy(fn)
+    {
+        new result = {};
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            new returned = fn(val[i]);
+            if (result[returned] == null || result[returned] == undefined)
+                result[returned] = [val[i]];
+            else
+                push(result[returned], val[i]);
+        }
+
+        return result;
+    }
+
+    takeWhile(fn)
+    {
+        new result = [];
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        while (i < length && fn(val[i]))
+        {
+            push(result, val[i]);
+            i++;
+        }
+
+        return result;
+    }
+
+    dropWhile(fn)
+    {
+        new result = [];
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        while (i < length && fn(val[i]))
+            i++;
+
+        while (i < length)
+        {
+            push(result, val[i]);
+            i++;
+        }
+
+        return result;
+    }
+
+    partition(fn)
+    {
+        new trueList = [];
+        new falseList = [];
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            if (fn(val[i]))
+                push(trueList, val[i]);
+            else
+                push(falseList, val[i]);
+        }
+
+        return [trueList, falseList];
+    }
+
+    every(fn)
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (!fn(val[i]))
+                return false;
+        
+        return true;
+    }
+
+    some(fn)
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (fn(val[i]))
+                return true;
+
+        return false;
+    }
+
+    sum()
+        return this.reduce(function(accumulator, current) return accumulator + current;, 0);
+
+    average()
+        return this.sum() / this.length();
+}
+
+class String extends BaseArray
+{
+    constructor(x)
+    {
+        x = tostr(x);
+        super(x);
+    }
+
+    set(x, y)
+    {
+        new result = "";
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            if (i == x)
+                result = concat(result, y)
+            else
+                result = concat(result, val[i]);
+        }
+
+        this = result;
+    }
+
+    concat(x)
+        this.__INIT__ = concat(this.__INIT__, x)
+
+    trimStart()
+    {
+        new val = this.__INIT__;
+        new result = "";
+        new length = len(val);
+
+        new i = 0;
+        new trimChar = true;
+        for (i = 0; i < length; i++)
+        {
+            new character = val[i];
+            
+            if (character == " " && trimChar)
+            {
+                
+            } 
+            else
+            {
+                result = concat(result, character);
+                trimChar = false;
+            }
+        }
+
+        return result;
+    }
+
+    trimEnd()
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+        new end = length - 1;
+
+        while (end > 0 && val[end] == " ")
+            end = end - 1;
+
+        new result = "";
+        new i = 0;
+        for (i = 0; i <= end; i++)
+            result = concat(result, val[i]);
+
+        return result;
+    }
+
+    trim()
+    {
+        new temp = inst String(this.trimEnd());
+        return temp.trimStart();
+    }
+
+    replace(x, y)
+    {
+        new result = "";
+        new val = this.__INIT__;
+        new length = len(val);
+        new xLength = len(x);
+        
+        new i, j = 0, 0;
+        new isSubstring = true;
+        while (i < length)
+        {
+            isSubstring = true;
+            for (j = 0; j < xLength; j++)
+            {
+                if (val[j + i] != x[j])
+                {
+                    isSubstring = false;
+                    break;
+                }
+            }
+
+            if (isSubstring)
+            {
+                result = concat(result, y);
+                i += xLength;
+            }
+            else 
+            {
+                result = concat(result, val[i]);
+                i++;
+            }
+        }
+
+        return result;
+    }
+
+    split(x)
+    {
+        new result = [];
+        new chunk = "";
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new xLength = len(x);
+
+        new i, j = 0, 0;
+        new isSeparator = true;
+        while (i < length)
+        {
+            isSeparator = true;
+            for (j = 0; j < xLength; j++)
+            {
+                if (val[j + i] != x[j])
+                {
+                    isSeparator = false;
+                    break;
+                }
+            }
+
+            if (isSeparator)
+            {
+                push(result, chunk);
+                chunk = "";
+                i += xLength;
+            }
+            else
+            {
+                chunk = concat(chunk, val[i]);
+                i++;
+            }
+        }
+
+        push(result, chunk);
+
+        return result;
+    }
+
+    toLower()
+    {
+        new result = "";
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            new ascii = strascii(val[i]);
+            if (ascii < 65 || ascii > 90)
+                result = concat(result, val[i]);
+            else 
+                result = concat(result, asciistr(ascii + 32));
+        }
+
+        return result;
+    }
+
+    toUpper()
+    {
+        new result = "";
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            new ascii = strascii(val[i]);
+            if (ascii < 97 || ascii > 122)
+                result = concat(result, val[i]);
+            else 
+                result = concat(result, asciistr(ascii - 32));
+        }
+
+        return result;
+    }
+
+    slice(x, y)
+    {
+        if (typeof(x) != "float" && typeof(x) != "bigint")
+            TypeError.throw(concat('Parameter "x" of String function "slice" must be type Float or BigInt. But got "', x,'"'));
+        if (typeof(y) != "float" && typeof(y) != "bigint")
+            TypeError.throw(concat('Parameter "y" of String function "slice" must be type Float or BigInt. But got "', y,'"'));
+
+        new result = "";
+
+        new val = this.__INIT__ != undefined ? tostr(this.__INIT__) : tostr(this);
+
+        new length = len(val);
+
+        if (x < 0) 
+            x = length + x;
+        if (y < 0) 
+            y = length + y;
+
+        new i = 0;
+        for (i = x; i < y; i++)
+        {
+            result = concat(result, val[i]);
+        }
+
+        return result;
+    }
+
+    insert(i, y)
+    {
+        new result = "";
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new j = 0;
+        for (j = 0; j < length; j++)
+        {
+            if (j == i)
+                result = concat(result, y);
+
+            result = concat(result, val[j]);
+        }
+
+        this.__INIT__ = result;
+    }
+
+    remove(i, x)
+    {   
+        new result = "";
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new j = 0;
+        for (j = 0; j < length; j++)
+        {
+            if (j >= i && j < i + x)
+                continue;
+            
+            result = concat(result, val[j]);
+        }
+
+        this.__INIT__ = result;
+    }
+
+    format(x)
+    {
+        if (typeof(x) != "array")
+            TypeError.throw('Parameter x of function "format" should be type "Array". But got "', x, '"');
+
+        new result = "";
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new xLength = len(x);
+
+        new i, j = 0, 0;
+        while (i < length)
+        {
+            if (concat(val[i], val[i + 1]) == "{}" && j < xLength)
+            {   
+                result = concat(result, x[j]);
+                j++;
+                i += 2;
+            }
+            else if (concat(val[i], val[i + 1]) == "{}")
+            {
+                result = concat(result, "{}");
+                i += 2;
+            }
+            else
+            {
+                result = concat(result, val[i]);
+                i++;
+            }
+        }
+
+        return result;
+    }
+
+    startsWith(x)
+        return this.indexOf(x) == 0;
+
+    endsWith(x)
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new sliced = this.slice(length - len(x), length);
+
+        return sliced == x;
+    }
+
+    repeat(x)
+    {
+        new result = "";
+        new val = this.__INIT__;
+
+        new i = 0;
+        for (i = 0; i < x; i++)
+            result = concat(result, val);
+
+        return result;
+    }
+
+    padStart(x, y)
+    {
+        new result = "";
+
+        new i = 0;
+        for (i = 0; i < x - len(this.__INIT__); i++)
+            result = concat(result, y);
+
+        return concat(result, this.__INIT__);
+    }
+
+    padEnd(x, y)
+    {
+        new result = this.__INIT__;
+
+        new i = 0;
+        for (i = 0; i < x - len(this.__INIT__); i++)
+            result = concat(result, y);
+
+        return result;
+    }
+
+    isAlpha()
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            if 
+            (
+                !(
+                    (strascii(val[i]) >= 65 && strascii(val[i]) <= 90) || # A-Z
+                    (strascii(val[i]) >= 97 && strascii(val[i]) <= 122)   # a-z
+                )
+            )
+                return false;
+        }
+
+        return true;
+    }
+
+    isAlphaNumeric()
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            if 
+            (
+                !(
+                    (strascii(val[i]) >= 65 && strascii(val[i]) <= 90)  || # A-Z
+                    (strascii(val[i]) >= 97 && strascii(val[i]) <= 122) || # a-z
+                    (strascii(val[i]) >= 48 && strascii(val[i]) <= 57)     # 1 - 9
+                )
+            )
+                return false;
+        }
+        
+        return true;
+    }
+
+    includes(x)
+        return this.indexOf(x) > -1;
+
+    count(x)
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new xLength = len(x);
+        new isX = true;
+        
+        new i, j = 0, 0;
+        new count = 0;
+        while (i < length)
+        {
+            isX = true;
+            for (j = 0; j < xLength; j++)
+            {
+                if (val[j + i] != x[j])
+                {
+                    isX = false;
+                    break;
+                }
+            }
+
+            if (isX)
+            {
+                count++;
+                i += xLength;
+            }
+            else
+                i++;
+        }
+
+        return count;
+    }
+
+    reverse()
+    {
+        new result = "";
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = length-1; i >= 0; i--)
+            result = concat(result, val[i]);
+
+        return result;
+    }
+
+    isNumeric()
+        return strascii(this.__INIT__) <= 9;
+
+    capitalize()
+    {
+        new first = inst String(this.slice(0, 1));
+        new rest  = inst String(this.slice(1, len(this.__INIT__)));
+        return concat(first.toUpper(), rest.toLower());
+    }
+
+    words()
+        return this.split(" ");
+
+    isWhitespace()
+    {
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            if 
+            (
+                !(
+                    val[i] == "\t" ||
+                    val[i] == "\n" ||
+                    val[i] == " "
+                )
+            )
+                return false;
+        }
+        
+        return true;
+    }
+
+    toArray()
+    {
+        new result = [];
+
+        new val = this.__INIT__;
+        new length = len(val);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            push(result, val[i]);
+
+        return result;
+    }
+
+    wrap(x, y)
+        return concat(x, this.__INIT__, y);
+}

@@ -1,0 +1,371 @@
+class process
+{
+    exit(code)
+        kill(code ? code : 0)
+
+    cwd()
+        return getcwd();
+
+    argv()
+        return getargv();
+
+    env(x)
+        return getenv(x);
+
+    pid()
+        return getpid();
+}
+
+class Cursor
+{
+    moveTo(row, column)
+        out("\x1B[", row, ";", column, "H")
+
+    hide()
+        out("\x1B[?25l")
+
+    show()
+        out("\x1B[?25h")
+
+    save()
+        out("\x1B[s")
+
+    restore()
+        out("\x1B[u")
+}
+
+class io
+{
+    constructor()
+    {
+        this.timer   = {};
+        this.counted = {};
+    }
+
+    write(...message)
+        out(...message)
+
+    writeln(...message)
+        print(...message)
+
+    writeClr(color, style, ...message)
+    {
+        if (style == undefined || style == null)
+            out("\x1B[", color, "m", ...message, "\x1B[0m");
+        else
+            out("\x1B[", style, "m\x1B[", color, "m", ...message, "\x1B[0m");
+    }
+
+    writeClrln(color, style, ...message)
+    {
+        if (style == undefined || style == null)
+            out("\x1B[", color, "m", ...message, "\x1B[0m\n");
+        else
+            out("\x1B[", style, "m\x1B[", color, "m", ...message, "\x1B[0m\n");
+    }
+
+    writeDir(directory, options)
+        dir(directory, options)
+
+    error(...message)
+        regularerror(...message)
+
+    clear()
+        out("\x1B[2J\x1B[3J\x1B[H")
+
+    clearln()
+        out("\x1B[2K\x1B[G")
+
+    clearToEnd()
+        out("\x1B[0K")
+
+    clearToStart()
+        out("\x1B[1K")
+
+    prompt(...question)
+        return input(...question);
+
+    bell()
+        out("\x07")
+
+    rule(character, width)
+    {
+        new i = 0;
+        new line = "";
+        for (i = 0; i < width; i++)
+            line = concat(line, character);
+        print(line);
+    }
+
+    timerStart(label)
+    {
+        if (typeof(label) != "string")
+            TypeError.throw(concat('Parameter "name" in function "timerStart" can only be type String. But got "', label, '"'));
+        this.timer[label] = now();
+    }
+    
+    timerEnd(label)
+    {
+        new currentTimer = now();
+        new nameTimer    = this.timer[label];
+        
+        if (nameTimer == undefined || nameTimer == null)
+        {
+            regularerror('Timer "', label, '" ', "does not exist");
+            return;
+        }
+
+        new elapsed = currentTimer - nameTimer;
+        if (elapsed >= 1000)
+            print(label, ": ", elapsed / 1000, "s")
+        else
+            print(label, ":", elapsed, "ms");
+    }
+
+    count(label)
+    {
+        if (!this.counted[label])
+            this.counted[label] = 0;
+        print(label, ": ", ++this.counted[label]);
+    }
+
+    countReset(label)
+        this.counted[label] = 0
+}
+
+Cursor  = inst Cursor();
+io      = inst io();
+process = inst process();
+
+class cmd 
+{
+    constructor()
+    {
+        this.BOLD          = 1;
+        this.DIM           = 2;
+        this.ITALIC        = 3;
+        this.UNDERLINE     = 4;
+        this.BLINK         = 5;
+        this.INVERSE       = 7;
+        this.STRIKETHROUGH = 9;
+
+        this.BLACK   = 30;
+        this.RED     = 31;
+        this.GREEN   = 32;
+        this.YELLOW  = 33;
+        this.BLUE    = 34;
+        this.MAGENTA = 35;
+        this.CYAN    = 36;
+        this.WHITE   = 37;
+        this.DEFAULT = 39;
+
+        this.BG_BLACK   = 40
+        this.BG_RED     = 41;
+        this.BG_GREEN   = 42
+        this.BG_YELLOW  = 43;
+        this.BG_BLUE    = 44;
+        this.BG_MAGENTA = 45;
+        this.BG_CYAN    = 46;
+        this.BG_WHITE   = 47;
+ 
+        this.BG_DEFAULT = 49; # resets cmd bg to default
+
+        this.GRAY           = 90;
+        this.BRIGHT_BLACK   = this.GRAY;
+        this.BRIGHT_RED     = 91;
+        this.BRIGHT_GREEN   = 92;
+        this.BRIGHT_YELLOW  = 93;
+        this.BRIGHT_BLUE    = 94;
+        this.BRIGHT_MAGENTA = 95
+        this.BRIGHT_CYAN    = 96;
+        this.BRIGHT_WHITE   = 97;
+    }
+
+    log(...message)
+        this.prototype.stdout.write(...message)
+
+    error(...message)
+        this.prototype.stdout.error(...message)
+
+    warn(...message)
+        this.prototype.stdout.writeClrln(this.YELLOW, null, ...message)
+    
+    success(...message)
+        this.prototype.stdout.writeClrln(this.GREEN, null, ...message)
+    
+    clr(color, style, ...args)
+        this.prototype.stdout.writeClrln(color, style, ...args)
+
+    info(...message)
+        this.prototype.stdout.writeClrln(this.CYAN, null, ...message)
+
+    debug(...message)
+        this.prototype.stdout.writeClrln(this.GRAY, null, ...message)
+}
+
+cmd = inst cmd();
+
+cmd.prototype        = {};
+cmd.prototype.stdout = io;
+
+class f
+{
+    constructor(filepath, i)
+        this.__INIT__ = i ? ifp(filepath) : filepath
+    
+    read()
+        return rf(this.__INIT__);
+
+    rwrite(content)
+        wfraw(this.__INIT__, content)
+        
+    write(content)
+        wf(this.__INIT__, content)
+
+    append(content)
+        af(this.__INIT__, content)
+
+    delete()
+        df(this.__INIT__)
+
+    exists()
+        return fe(this.__INIT__);
+
+    library()
+        return ifp(this.__INIT__);
+
+    copy(destination)
+        wf(destination, rf(this.__INIT__))
+
+    move(destination)
+    {
+        wf(destination, rf(this.__INIT__));
+        df(this.__INIT__);
+        this.__INIT__ = destination;
+    }
+
+    clear()
+        wf(this.__INIT__, "")
+
+    isEmpty()
+        return len(rf(this.__INIT__)) == 0;
+
+    size()
+        return len(rf(this.__INIT__));
+    
+    extension()
+    {
+        new lastDot = undefined;
+        new length = len(this.__INIT__);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (this.__INIT__[i] == ".")
+                lastDot = i;
+
+        if (lastDot == undefined)
+            return null;
+
+        return String.slice(this.__INIT__, lastDot, length);
+    }
+
+    stem()
+    {
+        new length = len(this.__INIT__);
+        new lastSlash = 0;
+        new lastDot = 0;
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+        {
+            if (this.__INIT__[i] == "/" || this.__INIT__[i] == "\\")
+                lastSlash = i;
+            if (this.__INIT__[i] == ".")
+                lastDot = i;
+        }
+
+        new start = lastSlash ? lastSlash + 1 : 0;
+        return String.slice(this.__INIT__, start, lastDot);
+    }
+
+    name()
+    {
+        new lastSlash = 0;
+        new length = len(this.__INIT__);
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (this.__INIT__[i] == "/" || this.__INIT__[i] == "\\")
+                lastSlash = i;
+
+        new start = lastSlash ? lastSlash + 1 : 0;
+        return String.slice(this.__INIT__, start, length);
+    }
+
+    dread(default)
+    {
+        if (fe(this.__INIT__))
+            return rf(this.__INIT__);
+        return default;
+    }
+
+    writeIfChanged(content)
+    {
+        if (rf(this.__INIT__) != content)
+            wf(this.__INIT__, content);
+    }
+
+    rename(newname)
+    {
+        new length = len(this.__INIT__);
+        new lastSlash = 0;
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (this.__INIT__[i] == "/" || this.__INIT__[i] == "\\")
+                lastSlash = i;
+
+        new directory   = String.slice(this.__INIT__, 0, lastSlash);
+        new destination = concat(directory, newname);
+
+        wf(destination, rf(this.__INIT__));
+        df(this.__INIT__);
+        this.__INIT__ = destination;
+    }
+
+    lines()
+        return String.split(rf(this.__INIT__), "\n");
+
+    create()
+    {
+        if (!fe(this.__INIT__))
+            wf(this.__INIT__, "");
+    }
+
+    path()
+        return this.__INIT__;
+
+    parent()
+    {
+        new length = len(this.__INIT__);
+        new lastSlash = 0;
+
+        new i = 0;
+        for (i = 0; i < length; i++)
+            if (this.__INIT__[i] == "/" || this.__INIT__[i] == "\\")
+                lastSlash = i;
+
+        new par = String.slice(this.__INIT__, 0, lastSlash);
+        if (par == "")
+            print("Warning: Directories don't have parents. Use a file path with a file extension at the end (e.g. C:\\Users\\Downloads\\test.pds)");
+        
+        return par;
+    }
+}
+
+function fw(path, content)
+{
+    new file = inst f(path);
+    file.create();
+    file.write(content);
+}

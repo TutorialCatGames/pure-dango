@@ -1,0 +1,56 @@
+import internal "types.pds";
+
+class AI
+{
+    constructor(apiKey, model, url)
+    {
+        this.apiKey = apiKey;
+        this.model  = model;
+        this.url    = url
+        this.conversationHistory = [];
+    }
+
+    ask(prompt)
+    {
+        push(this.conversationHistory, {role: "user", content: prompt});
+
+        new requestBody = 
+        {
+            model: this.model,
+            max_completion_tokens: 1024,
+            messages: this.conversationHistory
+        };
+
+        new headers = 
+        {
+            headers: 
+            {
+                "Content-Type" : "application/json",
+                "Authorization": concat("Bearer ", this.apiKey)
+            }
+        };
+
+        new response = 
+            http_post(
+                this.url,
+                requestBody,
+                headers
+            );
+
+        new parsed = tobj(response);
+        new assistantMessage = parsed.choices[0].message.content;
+
+        push(this.conversationHistory, {role: "assistant", content: assistantMessage});
+        return assistantMessage;
+    }
+
+    clearHistory()
+    {
+        this.conversationHistory = [];
+    }
+
+    setSystemPrompt(prompt)
+    {
+        this.systemPrompt = prompt;
+    }
+}

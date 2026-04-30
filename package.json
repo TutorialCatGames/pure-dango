@@ -4,22 +4,22 @@
     "type": "module",
     "description": "A simple programming language built in JavaScript",
     "license": "UNLICENSED",
-
     "bin": {
         "pure-dango": "src/index.ts"
     },
     "scripts": {
-        "dev"     : "tsx src/index.ts",
+        "dev": "tsx src/index.ts",
         "prebuild": "node src/scripts/libs.cjs",
-        "build"   : "node src/scripts/build.js"
+        "build": "node src/scripts/build.js"
     },
     "dependencies": {
         "gmp-wasm": "^1.3.2"
     },
-    "devDependencies" : {
+    "devDependencies": {
         "@types/node": "^25.5.0",
-        "pkg"        : "^5.8.1",
-        "typescript" : "^5.9.3"
+        "esbuild": "^0.28.0",
+        "pkg": "^5.8.1",
+        "typescript": "^5.9.3"
     },
     "pkg": {
         "scripts": [

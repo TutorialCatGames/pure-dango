@@ -921,7 +921,12 @@ const commands : Array<Function | undefined> =
             return;
         }
 
-        const cacheDirectory = path.join(process.env.LOCALAPPDATA || process.cwd(), "pure-dango", ".pdbccache");
+        const cacheDirectory = path.join(
+            process.env.LOCALAPPDATA || // Windows
+            process.env.HOME && path.join(process.env.HOME, ".cache") || // MacOS/Linux
+            process.cwd(),
+            "pure-dango", ".pdbccache"
+        );
         let importedBytecode = loadBytecode(cacheDirectory, absolutePath);
 
         if (!importedBytecode)

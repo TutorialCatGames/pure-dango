@@ -1,4 +1,4 @@
-# pure-dango v1.3.0.
+# pure-dango v1.3.1.
 A simple language built from JavaScript.
 
 ## Installation

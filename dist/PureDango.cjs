@@ -4910,7 +4910,7 @@ function getTrueValue(value) {
     return value;
   if (value === "__INIT__")
     return 0;
-  if (typeof value === "string" && value.trim() !== "" && !isNaN(Number(value))) {
+  if (typeof value === "string" && /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(value.trim()) && !isNaN(Number(value))) {
     if (value.includes("."))
       return GF(value);
     if (/^[+-]?\d+$/.test(value))
@@ -4952,8 +4952,10 @@ function BinaryOperator(type) {
   let left = unwrapInstance(getTrueValue(l));
   if (left === null || left === void 0 || right === null || right === void 0)
     return [left, right];
-  if ((typeof left === "string" || typeof right === "string") && type !== "comparison")
-    errorTemplate(`BinaryOperator`, `left and right parameter must be type BigInt or Float, got "${typeof left === "string" ? left : right}"`);
+  if ((typeof left === "string" || typeof right === "string") && type !== "comparison") {
+    const toStr = (v) => isGFloat(v) ? v.inner.toString() : v === null || v === void 0 ? "" : String(v);
+    return [toStr(left), toStr(right)];
+  }
   if (left === Infinity)
     left = BigInt(Number.MAX_SAFE_INTEGER);
   if (right === Infinity)
@@ -4964,11 +4966,13 @@ function BinaryOperator(type) {
     return [left, right];
   }
   if (typeof left === "number" && !Number.isInteger(left) || typeof right === "number" && !Number.isInteger(right)) {
+    if (typeof left === "string" || typeof right === "string") return [String(left), String(right)];
     left = GF(left);
     right = GF(right);
     return [left, right];
   }
   if (typeof left === "bigint" || typeof right === "bigint") {
+    if (typeof left === "string" || typeof right === "string") return [String(left), String(right)];
     if (typeof left !== "bigint")
       left = BigInt(left);
     if (typeof right !== "bigint")
@@ -5130,7 +5134,7 @@ var commands = [
       value = BigInt(value);
       stack.push(value);
       return;
-    } else if (typeof value === "string" && value !== "" && !isNaN(Number(value)))
+    } else if (typeof value === "string" && /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(value.trim()) && !isNaN(Number(value)))
       value = GF(value);
     if (value === void 0)
       throw new runtimeErrors.MissingStackTokenError("PUSH");
@@ -5357,6 +5361,8 @@ var commands = [
         column: callColumn
       }
     );
+    if (functionObject.definedFile)
+      file = functionObject.definedFile;
     activeBytecode = functionObject.bytecode;
     pointer = 0;
   },
@@ -5479,8 +5485,10 @@ var commands = [
     stack.push(
       {
         ...template,
-        closureScope: currentScope
+        closureScope: currentScope,
         // add closureScope to know the function's scope
+        definedFile: file
+        // track which source file defined this function
       }
     );
   },
@@ -5799,6 +5807,8 @@ var commands = [
         column
       }
     );
+    if (functionObject.definedFile)
+      file = functionObject.definedFile;
     activeBytecode = functionObject.bytecode;
     pointer = 0;
   }
@@ -5881,6 +5891,7 @@ async function interpret(bytecode, baseDir = process.cwd(), filename = "<anonymo
         activeBytecode = frame.bytecode;
         pointer = frame.pointer;
         currentScope = frame.savedScope;
+        file = frame.file;
         if (frame.returnMode === "constructor") {
           stack.pop();
           stack.push(frame.instance);
@@ -6262,6 +6273,7 @@ var saveBytecode = (cacheFolder, bytecode, srcFile, srcMTime) => {
   );
 };
 var loadBytecode = (cacheFolder, srcFile) => {
+  return null;
   const inFile = import_path3.default.join(cacheFolder, import_path3.default.basename(srcFile, ".pds") + ".pdbc");
   if (!import_fs3.default.existsSync(inFile))
     return null;
@@ -7190,9 +7202,10 @@ var asyncFunctions = {
         output: process.stdout
       }
     );
+    const prompt = interpretEscapeCharacters(joinedStrings);
     const inputValue = await new Promise(
       (resolve) => {
-        rl.question(joinedStrings, (answer) => resolve(answer));
+        rl.question(prompt, (answer) => resolve(answer));
       }
     );
     rl.close();
@@ -8237,7 +8250,7 @@ var {
 } = utils_exports;
 var packageJson = {
   name: true ? "pure-dango" : "pure-dango",
-  version: true ? "1.3.0" : "1.3.0",
+  version: true ? "1.3.1" : "1.3.1",
   description: true ? "A simple programming language built in JavaScript" : "A simple programming language built in JavaScript"
 };
 function pause(code = 0) {
@@ -8335,6 +8348,7 @@ process.on(
     console.log(`
 Pure dango program exited after: ${state.time.toFixed(3)} milliseconds...`);
   } catch (error) {
+    console.error(error);
     console.error(`
 ${error.message}`);
     console.log(`Pure dango program exited after: ${state.time.toFixed(3)} milliseconds...`);

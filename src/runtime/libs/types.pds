@@ -734,7 +734,7 @@ class String extends BaseArray
             
             if (character == " " && trimChar)
             {
-                
+                continue;
             } 
             else
             {
@@ -756,8 +756,7 @@ class String extends BaseArray
             end = end - 1;
 
         new result = "";
-        new i = 0;
-        for (i = 0; i <= end; i++)
+        for (new i = 0; i <= end; i++)
             result = concat(result, val[i]);
 
         return result;
@@ -765,8 +764,8 @@ class String extends BaseArray
 
     trim()
     {
-        new temp = inst String(this.trimEnd());
-        return temp.trimStart();
+        new temp = this.trimEnd();
+        return String.trimStart(temp);
     }
 
     replace(x, y)

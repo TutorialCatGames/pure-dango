@@ -180,6 +180,7 @@ process.on(
 
     catch (error : unknown)
     {
+        console.error(error);
         console.error(`\n${(error as Error).message}`);
         console.log(`Pure dango program exited after: ${state.time.toFixed(3)} milliseconds...`);
     }

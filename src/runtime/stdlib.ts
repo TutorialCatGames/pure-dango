@@ -1312,17 +1312,19 @@ export const asyncFunctions =
             }
         );
 
-        const inputValue = await new Promise
+        const prompt : string = interpretEscapeCharacters(joinedStrings);
+
+        const inputValue : string = await new Promise
         (
             resolve => 
             {
-                rl.question(joinedStrings, answer => resolve(answer));
+                rl.question(prompt, answer => resolve(answer));
             }
         );
 
         rl.close();
 
-        return inputValue as string;
+        return inputValue;
     },
 
     "sleep": async (stack: Stack, getTrueValue: Function, ...args: any[]) : Promise<void> =>

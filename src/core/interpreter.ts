@@ -203,7 +203,7 @@ function getTrueValue(value : any)
     if (value === "__INIT__")
         return 0;
 
-    if (typeof value === "string" && value.trim() !== "" && !isNaN(Number(value)))
+    if (typeof value === "string" && /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(value.trim()) && !isNaN(Number(value)))
     {
         if (value.includes(".")) 
             return GF(value);
@@ -265,8 +265,11 @@ function BinaryOperator(type : string) : Array<any>
     if (left === null || left === undefined || right === null || right === undefined)
         return [left, right];
     
-    if ((typeof left === "string" || typeof right === "string") && type !== "comparison") 
-        errorTemplate(`BinaryOperator`, `left and right parameter must be type BigInt or Float, got "${typeof left === "string" ? left : right}"`);
+    if ((typeof left === "string" || typeof right === "string") && type !== "comparison")
+    {
+        const toStr = (v: any): string => isGFloat(v) ? v.inner.toString() : v === null || v === undefined ? "" : String(v);
+        return [toStr(left), toStr(right)];
+    }
 
     if (left === Infinity)  
         left = BigInt(Number.MAX_SAFE_INTEGER);
@@ -285,6 +288,7 @@ function BinaryOperator(type : string) : Array<any>
         (typeof right === "number" && !Number.isInteger(right))
     )
     {
+        if (typeof left  === "string" || typeof right === "string") return [String(left), String(right)];
         left  = GF(left);
         right = GF(right);
         return [left, right];
@@ -292,6 +296,7 @@ function BinaryOperator(type : string) : Array<any>
 
     if (typeof left === "bigint" || typeof right === "bigint")
     {
+        if (typeof left  === "string" || typeof right === "string") return [String(left), String(right)];
         if (typeof left !== "bigint")  
             left = BigInt(left);
         if (typeof right !== "bigint") 
@@ -332,7 +337,7 @@ function commandMapBinaryOperators(
             stack.push(undefined);
             return;
         }
-
+        
         const result = isGFloat(left) || isGFloat(right) ? GMPFunc(left, right) : func(left, right);
         stack.push(typeof result === "boolean" ? (result ? 1 : 0) : result);
     }
@@ -516,7 +521,7 @@ const commands : Array<Function | undefined> =
             return;
         }
 
-        else if (typeof value === "string" && value !== "" && !isNaN(Number(value))) 
+        else if (typeof value === "string" && /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(value.trim()) && !isNaN(Number(value))) 
             value = GF(value);
 
         if (value === undefined)
@@ -825,6 +830,8 @@ const commands : Array<Function | undefined> =
             }
         );
 
+        if (functionObject.definedFile)
+            file = functionObject.definedFile;
         activeBytecode = functionObject.bytecode;
         pointer        = 0;
     },   // CALL
@@ -969,7 +976,8 @@ const commands : Array<Function | undefined> =
         (
             {
                 ...template,
-                closureScope: currentScope   // add closureScope to know the function's scope
+                closureScope: currentScope,   // add closureScope to know the function's scope
+                definedFile:  file            // track which source file defined this function
             }
         );
     },   // MKFUNC
@@ -1408,6 +1416,8 @@ const commands : Array<Function | undefined> =
             }
         );
 
+        if (functionObject.definedFile)
+            file = functionObject.definedFile;
         activeBytecode = functionObject.bytecode;
         pointer        = 0;
     },   // CALLMETHOD
@@ -1522,6 +1532,7 @@ export async function interpret(bytecode: Bytecode, baseDir : string = process.c
                 activeBytecode    = frame.bytecode;
                 pointer           = frame.pointer;
                 currentScope      = frame.savedScope;
+                file              = frame.file;
 
                 if (frame.returnMode === "constructor")
                 {

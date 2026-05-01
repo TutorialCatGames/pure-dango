@@ -372,6 +372,7 @@ export const saveBytecode = (cacheFolder: CacheFolder, bytecode: Bytecode, srcFi
 
 export const loadBytecode = (cacheFolder: string, srcFile: string) : Bytecode | null =>
 {
+    return null;
     const inFile = path.join(cacheFolder, path.basename(srcFile, ".pds") + ".pdbc");
 
     if (!fs.existsSync(inFile)) 

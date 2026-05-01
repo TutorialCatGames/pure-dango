@@ -4,13 +4,22 @@ import {fileURLToPath} from "url";
 import {execSync}      from "child_process";
 import os              from "os";
 
-const __filename =        fileURLToPath(import.meta.url);
-const __dirname =         path.dirname(__filename);
-const projectRoot =       path.join(__dirname, "../..");
-const pkg =               JSON.parse(fs.readFileSync(path.join(projectRoot, "package.json"), "utf8"));
+const __filename =  fileURLToPath(import.meta.url);
+const __dirname =   path.dirname(__filename);
+const projectRoot = path.join(__dirname, "../..");
+const pkg =         JSON.parse(fs.readFileSync(path.join(projectRoot, "package.json"), "utf8"));
+
+const skipExe = process.env.SKIP_EXE === "true";
 
 console.log("building");
 execSync(`npx esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/PureDango.cjs --format=cjs --define:PACKAGE_NAME='"${pkg.name}"' --define:PACKAGE_VERSION='"${pkg.version}"' --define:PACKAGE_DESCRIPTION='"${pkg.description}"'`, {stdio: "inherit"});
+
+if (skipExe) 
+{
+    console.log("Skipping executable packaging (development mode)");
+    console.log("Build complete!");
+    process.exit(0);
+}
 
 console.log("packaging");
 

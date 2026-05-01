@@ -16,23 +16,50 @@ else
     LAUNCHER="$PROJECT_ROOT/dist/PureDangoLauncher-linux"
 fi
 
+# pure-dango -h
 if [[ "$1" == "-help" || "$1" == "--help" || "$1" == "-h" ]]; then
-    echo "Usage: pure-dango [file]"
-    echo ""
+    echo "Usage: pure-dango [OPTIONS] [file]"
+    echo ""s
     echo "Options:"
     echo "  -help, --help, -h : Show this help message"
-    echo "  -r [FILE]         : Rebuilds the exe then runs the file"
-    echo "  -r                : Rebuilds only"
+    echo "  -dev              : Run in development mode (uses Node.js directly)"
+    echo "  -r [FILE]         : Rebuild the exe then run the file"
+    echo "  -r                : Rebuild only"
     echo ""
-    echo "Example:"
-    echo "  pure-dango hello.pds"
+    echo "Examples:"
+    echo "  pure-dango hello.pds         # Run using compiled executable"
+    echo "  pure-dango -dev hello.pds    # Run using Node.js (for development)"
+    echo "  pure-dango -r hello.pds      # Rebuild and run"
     exit 0
 fi
 
+# pure-dango -dev [FILE]
+if [[ "$1" == "-dev" ]]; then
+    cd "$PROJECT_ROOT"
+    
+    if [[ ! -d "node_modules" ]]; then
+        echo "Dependencies not installed. Running npm install..."
+        npm install
+    fi
+    
+    if command -v tsx &> /dev/null; then
+        tsx src/index.ts "$2"
+    elif [[ -f "dist/PureDango.cjs" ]]; then
+        node dist/PureDango.cjs "$2"
+    else
+        echo "Building project first..."
+        SKIP_EXE=true npm run build
+        node dist/PureDango.cjs "$2"
+    fi
+    exit 0
+fi
+
+# pure-dango -r || pure-dango -r [FILE]
 if [[ "$1" == "-r" ]]; then
     cd "$PROJECT_ROOT" && npm run build
     [[ -n "$2" ]] && "$LAUNCHER" run "$2"
     exit 0
 fi
 
+#
 "$LAUNCHER" run "$1"

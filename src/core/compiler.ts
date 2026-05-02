@@ -134,8 +134,8 @@ const operators : Record<string, number> = Object.freeze({
     SETFILE:    35,   // sets the current file name
     SPREAD:     36,   // spreaded arguments
     CALLMETHOD: 37,   
-    TRY:        40,   // start try block
-    ENDTRY:     41    // end try-catch
+    TRY:        38,   // start try block
+    ENDTRY:     39    // end try-catch
 })
 
 const binaryOperators : Record<string, number> = Object.freeze({

@@ -4089,9 +4089,9 @@ var operators = Object.freeze({
   SPREAD: 36,
   // spreaded arguments
   CALLMETHOD: 37,
-  TRY: 40,
+  TRY: 38,
   // start try block
-  ENDTRY: 41
+  ENDTRY: 39
   // end try-catch
 });
 var binaryOperators = Object.freeze({

@@ -8371,7 +8371,7 @@ var {
 } = utils_exports;
 var packageJson = {
   name: true ? "pure-dango" : "pure-dango",
-  version: true ? "1.3.1" : "1.3.1",
+  version: true ? "1.4.0" : "1.4.0",
   description: true ? "A simple programming language built in JavaScript" : "A simple programming language built in JavaScript"
 };
 function pause(code = 0) {

@@ -1702,7 +1702,9 @@ export async function interpret(
                 callStack      = [...frame.savedCallStack];
  
                 const errorMessage = caughtError instanceof Error
-                    ? caughtError.message
+                    ? (caughtError.name && caughtError.name !== "Error"
+                        ? caughtError.name + (caughtError.message ? ": " + caughtError.message : "")
+                        : caughtError.message)
                     : String(caughtError);
                 stack.push(errorMessage);
  

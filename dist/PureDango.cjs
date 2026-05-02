@@ -6037,7 +6037,7 @@ async function interpret(bytecode, baseDir = process.cwd(), filename = "<anonymo
         currentScope = frame.savedScope;
         stack = [...frame.savedStack];
         callStack = [...frame.savedCallStack];
-        const errorMessage = caughtError instanceof Error ? caughtError.message : String(caughtError);
+        const errorMessage = caughtError instanceof Error ? caughtError.name && caughtError.name !== "Error" ? caughtError.name + (caughtError.message ? ": " + caughtError.message : "") : caughtError.message : String(caughtError);
         stack.push(errorMessage);
         tryStack.pop();
         handled = true;

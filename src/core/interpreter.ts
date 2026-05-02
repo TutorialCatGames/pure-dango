@@ -52,6 +52,7 @@ let tryStack: Array<{
     savedBytecode    : Bytecode,
     savedScope       : Scope,
     savedStack       : any[],
+    savedCallStack   : CallFrame[],
     catchExecuted    : boolean,
     finallyExecuted? : boolean,
     pendingError?    : any,
@@ -1449,6 +1450,7 @@ const commands : Array<Function | undefined> =
             savedBytecode : activeBytecode,
             savedScope    : currentScope,
             savedStack    : [...stack],
+            savedCallStack: [...callStack],
             catchExecuted : false,
             file,
             line,
@@ -1480,7 +1482,7 @@ const commands : Array<Function | undefined> =
     },   // ENDTRY
 ];
 
-const asyncOpcodes = new Set([10, 26, 35, 37]);
+const asyncOpcodes = new Set([5, 10, 13, 26, 35, 37]);
 export async function interpret(
     bytecode  : Bytecode,
     baseDir   : string = process.cwd(),
@@ -1682,6 +1684,7 @@ export async function interpret(
                 pointer        = frame.finallyPosition;
                 activeBytecode = frame.savedBytecode;
                 currentScope   = frame.savedScope;
+                callStack      = [...frame.savedCallStack];
  
                 handled = true;
                 break;
@@ -1696,6 +1699,7 @@ export async function interpret(
                 activeBytecode = frame.savedBytecode;
                 currentScope   = frame.savedScope;
                 stack          = [...frame.savedStack];
+                callStack      = [...frame.savedCallStack];
  
                 const errorMessage = caughtError instanceof Error
                     ? caughtError.message

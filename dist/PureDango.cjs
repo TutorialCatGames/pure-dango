@@ -4491,8 +4491,7 @@ var typeMap = /* @__PURE__ */ new Map([
         bytecode.push(operators.PUSHSCP);
         node.finallyBlock.forEach((n) => parseObject(n, bytecode));
         bytecode.push(operators.POPSCP);
-      } else
-        bytecode[tryStartPosition + 2] = afterCatchPosition;
+      }
       bytecode.push(operators.ENDTRY);
     }
   ],
@@ -5859,6 +5858,7 @@ var commands = [
       savedBytecode: activeBytecode,
       savedScope: currentScope,
       savedStack: [...stack],
+      savedCallStack: [...callStack],
       catchExecuted: false,
       file,
       line,
@@ -5882,7 +5882,7 @@ var commands = [
   }
   // ENDTRY
 ];
-var asyncOpcodes = /* @__PURE__ */ new Set([10, 26, 35, 37]);
+var asyncOpcodes = /* @__PURE__ */ new Set([5, 10, 13, 26, 35, 37]);
 async function interpret(bytecode, baseDir = process.cwd(), filename = "<anonymous>") {
   pointer = 0;
   stack = [];
@@ -6026,6 +6026,7 @@ async function interpret(bytecode, baseDir = process.cwd(), filename = "<anonymo
         pointer = frame.finallyPosition;
         activeBytecode = frame.savedBytecode;
         currentScope = frame.savedScope;
+        callStack = [...frame.savedCallStack];
         handled = true;
         break;
       }
@@ -6035,6 +6036,7 @@ async function interpret(bytecode, baseDir = process.cwd(), filename = "<anonymo
         activeBytecode = frame.savedBytecode;
         currentScope = frame.savedScope;
         stack = [...frame.savedStack];
+        callStack = [...frame.savedCallStack];
         const errorMessage = caughtError instanceof Error ? caughtError.message : String(caughtError);
         stack.push(errorMessage);
         tryStack.pop();
@@ -6366,7 +6368,6 @@ var saveBytecode = (cacheFolder, bytecode, srcFile, srcMTime) => {
   );
 };
 var loadBytecode = (cacheFolder, srcFile) => {
-  return null;
   const inFile = import_path3.default.join(cacheFolder, import_path3.default.basename(srcFile, ".pds") + ".pdbc");
   if (!import_fs3.default.existsSync(inFile))
     return null;

@@ -675,8 +675,6 @@ const typeMap : TypeMap = new Map([
                 node.finallyBlock.forEach((n: any) => parseObject(n, bytecode));
                 bytecode.push(operators.POPSCP);
             }
-            else
-                bytecode[tryStartPosition + 2] = afterCatchPosition;
 
             bytecode.push(operators.ENDTRY);
         }

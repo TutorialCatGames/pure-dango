@@ -133,7 +133,9 @@ const operators : Record<string, number> = Object.freeze({
     SETLINE:    34,   // this GENUINELY doesn't need a comment but: sets the row and column
     SETFILE:    35,   // sets the current file name
     SPREAD:     36,   // spreaded arguments
-    CALLMETHOD: 37
+    CALLMETHOD: 37,   
+    TRY:        40,   // start try block
+    ENDTRY:     41    // end try-catch
 })
 
 const binaryOperators : Record<string, number> = Object.freeze({
@@ -629,6 +631,54 @@ const typeMap : TypeMap = new Map([
             for (const {position, target} of positions) bytecode[position + 1] = target;
             
             loopStack.pop();
+        }
+    ],
+
+    ["TryStatement", 
+        (node : any, bytecode : Bytecode) : void =>
+        {
+            bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
+
+            const tryStartPosition = bytecode.length;
+            bytecode.push(operators.TRY, 0, 0); // [TRY, catchPosition, finallyPosition]
+
+            // parse try body
+            bytecode.push(operators.PUSHSCP);
+            node.tryBlock.forEach((n: any) => parseObject(n, bytecode));
+            bytecode.push(operators.POPSCP);
+
+            // jump past catch block if no error occurred
+            const skipCatchPosition = bytecode.length;
+            bytecode.push(operators.JMP, 0);
+
+            // catch block
+            const catchPosition = bytecode.length;
+            bytecode[tryStartPosition + 1] = catchPosition;
+
+            bytecode.push(operators.PUSHSCP);
+            bytecode.push(operators.ALLOC, node.errorVariable);
+            bytecode.push(operators.STORE, node.errorVariable);
+
+            node.catchBlock.forEach((n: any) => parseObject(n, bytecode));
+            bytecode.push(operators.POPSCP);
+
+            // end of catch block
+            const afterCatchPosition = bytecode.length;
+            bytecode[skipCatchPosition + 1] = afterCatchPosition;
+
+            if (node.finallyBlock)
+            {
+                const finallyPosition = bytecode.length;
+                bytecode[tryStartPosition + 2] = finallyPosition;
+
+                bytecode.push(operators.PUSHSCP);
+                node.finallyBlock.forEach((n: any) => parseObject(n, bytecode));
+                bytecode.push(operators.POPSCP);
+            }
+            else
+                bytecode[tryStartPosition + 2] = afterCatchPosition;
+
+            bytecode.push(operators.ENDTRY);
         }
     ],
 

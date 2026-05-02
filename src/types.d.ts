@@ -45,6 +45,12 @@ type ParserToken =
     then?  : ParserToken,
     else?  : ParserToken | ParserToken[] | null,
 
+    tryBlock?: ParserToken[],
+    catchBlock?: ParserToken[],
+    finallyBlock?: ParserToken[] | null,
+
+    errorVariable?: string,
+
     elements? : ParserToken[],
 
     className?    : string,

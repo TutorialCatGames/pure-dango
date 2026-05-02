@@ -45,6 +45,21 @@ type CallFrame =
     column        : number,
 };
 
+let tryStack: Array<{
+    catchPosition    : number,
+    finallyPosition  : number,
+    savedPointer     : number,
+    savedBytecode    : Bytecode,
+    savedScope       : Scope,
+    savedStack       : any[],
+    catchExecuted    : boolean,
+    finallyExecuted? : boolean,
+    pendingError?    : any,
+    file             : string,
+    line             : number,
+    column           : number,
+}> = [];
+
 let g: any;
 export let gmpInstance: any;
 export let gmpPrecision: number = 128; 
@@ -1421,13 +1436,60 @@ const commands : Array<Function | undefined> =
         activeBytecode = functionObject.bytecode;
         pointer        = 0;
     },   // CALLMETHOD
+
+    (bytecode : Bytecode) : void =>
+    {
+        const catchPosition   = next(bytecode);
+        const finallyPosition = next(bytecode);
+
+        tryStack.push({
+            catchPosition,
+            finallyPosition,
+            savedPointer  : pointer,
+            savedBytecode : activeBytecode,
+            savedScope    : currentScope,
+            savedStack    : [...stack],
+            catchExecuted : false,
+            file,
+            line,
+            column
+        });
+    },   // TRY
+
+    () : void =>
+    {
+        if (tryStack.length > 0)
+        {
+            const frame = tryStack[tryStack.length - 1];
+
+            if (frame.finallyPosition && !frame.finallyExecuted)
+            {
+                frame.finallyExecuted = true;
+                pointer = frame.finallyPosition;
+                return;
+            }
+
+            const pendingError = frame.pendingError;
+            tryStack.pop();
+
+            // If finally ran after a catch, nothing more to do.
+            // If finally ran after an ERROR (pendingError set), re-throw now.
+            if (pendingError !== undefined)
+                throw pendingError;
+        }
+    },   // ENDTRY
 ];
 
 const asyncOpcodes = new Set([10, 26, 35, 37]);
-export async function interpret(bytecode: Bytecode, baseDir : string = process.cwd(), filename : string = "<anonymous>")
+export async function interpret(
+    bytecode  : Bytecode,
+    baseDir   : string = process.cwd(),
+    filename  : string = "<anonymous>"
+)
 {
     pointer        = 0;
     stack          = [];
+    tryStack       = [];
     activeBytecode = bytecode;
     currentBaseDir = baseDir;
     currentScope   = new Scope();
@@ -1436,214 +1498,251 @@ export async function interpret(bytecode: Bytecode, baseDir : string = process.c
     line           = 0;
     column         = 0;
     importedFiles.clear();
-
-    let steps : number = 0;
-
-    try
+ 
+    let steps = 0;
+ 
+    while (true)
     {
-        while (true)
+        let caughtError: any = undefined;
+ 
+        try
         {
-            if (pointer >= activeBytecode.length)
+            while (true)
             {
-                if (callStack.length === 0) 
-                    break;
-
-                const frame : any = callStack.pop();
-                activeBytecode    = frame.bytecode;
-                pointer           = frame.pointer;
-                currentScope      = frame.savedScope;
-
-
-                if (frame.returnMode === "constructor")
+                if (pointer >= activeBytecode.length)
                 {
-                    if (!frame.pendingMethod)
-                        stack.push(frame.instance);
-                    
-                    if (frame.pendingMethod)
+                    if (callStack.length === 0)
+                        break;
+ 
+                    const frame: any = callStack.pop();
+                    activeBytecode   = frame.bytecode;
+                    pointer          = frame.pointer;
+                    currentScope     = frame.savedScope;
+ 
+                    if (frame.returnMode === "constructor")
                     {
-                        const 
-                        { 
-                            methodBytecode, 
-                            methodKey, 
-                            methodArgs 
-                        } = frame.pendingMethod;
-                        
-                        const methodScope = new Scope(currentScope);
-                        methodScope.declare("this");
-                        methodScope.set("this", frame.instance);
-
-                        frame.pendingMethod.methodParameters.forEach
-                        (
-                            (parameter: any, i: number) =>
-                            {
-                                methodScope.declare(parameter.name);
-                                methodScope.set(parameter.name, methodArgs[i] !== undefined ? methodArgs[i] : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined));
-                            }
-                        );
-
-                        callStack.push
-                        (
-                            {
+                        if (!frame.pendingMethod)
+                            stack.push(frame.instance);
+ 
+                        if (frame.pendingMethod)
+                        {
+                            const { methodBytecode, methodKey, methodArgs } = frame.pendingMethod;
+ 
+                            const methodScope = new Scope(currentScope);
+                            methodScope.declare("this");
+                            methodScope.set("this", frame.instance);
+ 
+                            frame.pendingMethod.methodParameters.forEach(
+                                (parameter: any, i: number) =>
+                                {
+                                    methodScope.declare(parameter.name);
+                                    methodScope.set(
+                                        parameter.name,
+                                        methodArgs[i] !== undefined
+                                            ? methodArgs[i]
+                                            : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined)
+                                    );
+                                }
+                            );
+ 
+                            callStack.push({
                                 bytecode     : activeBytecode,
                                 pointer      : pointer,
                                 savedScope   : currentScope,
                                 returnMode   : "function",
                                 functionName : methodKey,
-                                file, 
-                                line, 
-                                column
-                            }
-                        );
-
-                        currentScope   = methodScope;
-                        activeBytecode = methodBytecode;
-                        pointer        = 0;
+                                file, line, column
+                            });
+ 
+                            currentScope   = methodScope;
+                            activeBytecode = methodBytecode;
+                            pointer        = 0;
+                        }
                     }
-                }
-                else if (frame.returnMode === "super")
-                {
-                    const nextFrame = callStack[callStack.length - 1];
-                    if (!nextFrame?.pendingMethod)
-                        stack.push(undefined);
-                }
-                else if (frame.returnMode === "execute")
-                {
-                    file = frame.file;
-
-                    line   = frame.line;
-                    column = frame.column;
-
-                    currentBaseDir = frame.savedBaseDir ?? currentBaseDir;
-                }
-                else
-                {
-                    if (stack[stack.length - 1] === undefined)
-                        stack.push(undefined);
-                }
-
-                continue;
-            }
-
-            const operator : any = activeBytecode[pointer++];
-
-            if (operator === 25)   // RETURN
-            {
-                const frame : any = callStack.pop();
-                activeBytecode    = frame.bytecode;
-                pointer           = frame.pointer;
-                currentScope      = frame.savedScope;
-                file              = frame.file;
-
-                if (frame.returnMode === "constructor")
-                {
-                    stack.pop();
-                    stack.push(frame.instance);
-
-                    if (frame.pendingMethod)
+                    else if (frame.returnMode === "super")
                     {
-                        const 
-                        { 
-                            methodBytecode, 
-                            methodKey,
-                            methodArgs, 
-                            methodParameters 
-                        } = frame.pendingMethod;
-                        
-                        const methodScope = new Scope(currentScope);
-                        methodScope.declare("this");
-                        methodScope.set("this", frame.instance);
-                        
-                        methodParameters.forEach
-                        (
-                            (parameter: any, i: number) =>
+                        const nextFrame = callStack[callStack.length - 1];
+                        if (!nextFrame?.pendingMethod)
+                            stack.push(undefined);
+                    }
+                    else if (frame.returnMode === "execute")
+                    {
+                        file = frame.file;
+                        line = frame.line;
+                        column = frame.column;
+                        currentBaseDir = frame.savedBaseDir ?? currentBaseDir;
+                    }
+                    else
+                    {
+                        if (stack[stack.length - 1] === undefined)
+                            stack.push(undefined);
+                    }
+ 
+                    continue;
+                }
+ 
+                const operator: any = activeBytecode[pointer++];
+ 
+                if (operator === 25)   // RETURN
+                {
+                    const frame: any = callStack.pop();
+                    activeBytecode   = frame.bytecode;
+                    pointer          = frame.pointer;
+                    currentScope     = frame.savedScope;
+                    file             = frame.file;
+ 
+                    if (frame.returnMode === "constructor")
+                    {
+                        stack.pop();
+                        stack.push(frame.instance);
+ 
+                        if (frame.pendingMethod)
+                        {
+                            const { methodBytecode, methodKey, methodArgs, methodParameters } = frame.pendingMethod;
+ 
+                            const methodScope = new Scope(currentScope);
+                            methodScope.declare("this");
+                            methodScope.set("this", frame.instance);
+ 
+                            methodParameters.forEach((parameter: any, i: number) =>
                             {
                                 methodScope.declare(parameter.name);
-                                methodScope.set(parameter.name, methodArgs[i] !== undefined ? methodArgs[i] : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined));
-                            }
-                        );
-
-                        callStack.push
-                        (
-                            {
+                                methodScope.set(
+                                    parameter.name,
+                                    methodArgs[i] !== undefined
+                                        ? methodArgs[i]
+                                        : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined)
+                                );
+                            });
+ 
+                            callStack.push({
                                 bytecode     : frame.pendingMethod.returnBytecode,
-                                pointer      : frame.pendingMethod.returnPointer, 
+                                pointer      : frame.pendingMethod.returnPointer,
                                 savedScope   : frame.pendingMethod.returnScope,
                                 returnMode   : "function",
                                 functionName : methodKey,
-                                file, 
-                                line, 
-                                column
-                            }
-                        );
-
-                        stack.pop(); 
-                        currentScope   = methodScope;
-                        activeBytecode = methodBytecode;
-                        pointer        = 0;
+                                file, line, column
+                            });
+ 
+                            stack.pop();
+                            currentScope   = methodScope;
+                            activeBytecode = methodBytecode;
+                            pointer        = 0;
+                        }
                     }
+                    else if (frame.returnMode === "super")
+                    {
+                        const nextFrame = callStack[callStack.length - 1];
+                        if (!nextFrame?.pendingMethod)
+                            stack.push(undefined);
+                    }
+ 
+                    continue;
                 }
-                else if (frame.returnMode === "super")
-                {
-                    const nextFrame = callStack[callStack.length - 1];
-                    if (!nextFrame?.pendingMethod)
-                        stack.push(undefined);
-                }
-
-                continue;
+ 
+                if (typeof operator !== "number")
+                    throw new runtimeErrors.InternalError(
+                        `operator should be a number but got "${operator}"`
+                    );
+ 
+                const command = commands[operator];
+                if (command === undefined)
+                    throw new runtimeErrors.InternalError(`unknown operator code: "${operator}"`);
+ 
+                if (asyncOpcodes.has(operator))
+                    await command(activeBytecode);
+                else
+                    command(activeBytecode);
+ 
+                if (++steps % 1_000_000 === 0)
+                    await new Promise(setImmediate);
             }
-
-            if (typeof operator !== "number") 
-                throw new runtimeErrors.InternalError(`operator should be a number but got "${operator}"`);
-
-            const command = commands[operator];
-            if (command === undefined) 
-                throw new runtimeErrors.InternalError(`unknown operator code: "${operator}"`);
-
-            if (asyncOpcodes.has(operator)) 
-            {
-                await command(activeBytecode);
-            } 
-            else 
-            {
-                command(activeBytecode);
-            }
-
-            if (++steps % 1000000 === 0)
-                await new Promise(setImmediate);
+ 
+            break;   // clean exit from inner while(true) — we're done
         }
-    }
-    catch(error : any)
-    {
-        if (!error.hasLocation)
+        catch (error: any)
+        {
+            caughtError = error;
+        }
+ 
+        if (caughtError === undefined)
+            break;
+ 
+        let handled = false;
+ 
+        while (tryStack.length > 0)
+        {
+            const frame = tryStack[tryStack.length - 1];
+ 
+            if (frame.finallyPosition && !frame.finallyExecuted)
+            {
+                frame.finallyExecuted = true;
+                frame.pendingError    = caughtError;
+ 
+                pointer        = frame.finallyPosition;
+                activeBytecode = frame.savedBytecode;
+                currentScope   = frame.savedScope;
+ 
+                handled = true;
+                break;
+            }
+ 
+            // Catch block.
+            if (frame.catchPosition && !frame.catchExecuted)
+            {
+                frame.catchExecuted = true;
+ 
+                pointer        = frame.catchPosition;
+                activeBytecode = frame.savedBytecode;
+                currentScope   = frame.savedScope;
+                stack          = [...frame.savedStack];
+ 
+                const errorMessage = caughtError instanceof Error
+                    ? caughtError.message
+                    : String(caughtError);
+                stack.push(errorMessage);
+ 
+                tryStack.pop();
+ 
+                handled = true;
+                break;
+            }
+ 
+            tryStack.pop();
+        }
+
+        if (handled)
+            continue; 
+ 
+        if (!caughtError.hasLocation)
         {
             const fileShortName = file.split(/[\\/]/).pop() ?? file;
-            error.message += `\n    at ${fileShortName} (${file}:${line}:${column})`;
-
+            caughtError.message += `\n    at ${fileShortName} (${file}:${line}:${column})`;
+ 
             for (let i = callStack.length - 1; i >= 0; i--)
             {
                 const frame = callStack[i];
-
+ 
                 if (frame.returnMode === "execute")
                 {
                     const importerFile  = frame.importer ?? frame.file;
                     const importerShort = importerFile.split(/[\\/]/).pop() ?? importerFile;
-                    error.message       += `\n    at ${importerShort} (${importerFile}:${frame.line}:${frame.column})`;
+                    caughtError.message += `\n    at ${importerShort} (${importerFile}:${frame.line}:${frame.column})`;
                 }
                 else
                 {
-                    const frameShort : string = frame.file.split(/[\\/]/).pop() ?? frame.file;
-                    error.message       += `\n    at ${frame.functionName} (${frameShort}:${frame.line}:${frame.column})`;
+                    const frameShort = frame.file.split(/[\\/]/).pop() ?? frame.file;
+                    caughtError.message += `\n    at ${frame.functionName} (${frameShort}:${frame.line}:${frame.column})`;
                 }
             }
-
-            error.hasLocation = true;
+ 
+            caughtError.hasLocation = true;
         }
-        throw error;
+ 
+        throw caughtError;
     }
-    return {
-        stack,
-        scopes: currentScope
-    };
+ 
+    return {stack, scopes: currentScope};
 }
 
 export async function executeInCurrentContext(code : string, isolateScope : boolean = false) : Promise<any>

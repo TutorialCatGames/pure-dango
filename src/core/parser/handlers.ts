@@ -1,6 +1,7 @@
 import path from "path";
 import {parseErrors} from "../../runtime/errors";
 import {peek, next, parseExpression, parseStatement} from "./main";
+import {errorTemplate} from "../../runtime/stdlib";
 
 export function parseInstantationExpression(token : BaseToken, tokens : Tokens, state : State) : ParserToken
 {
@@ -10,12 +11,14 @@ export function parseInstantationExpression(token : BaseToken, tokens : Tokens, 
     const classToken = peek(tokens, state);
     if (!classToken || classToken.type !== "Identifier")
         throw new Error(`Expected class name after "inst" at line ${row}:${column}`);
+
     const className : string = next(tokens, state)!.value;
 
     if (!peek(tokens, state) || peek(tokens, state).value !== "(")
         throw new parseErrors.MissingTokenError("(", row, column);
     next(tokens, state); // eat (
 
+    // collect arguments
     const args : ParserToken[] = [];
     while (peek(tokens, state) && peek(tokens, state).value !== ")")
     {
@@ -48,18 +51,15 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
     if (!token || token.type !== "Keyword" || token.value !== "new")
         return false;
 
-    const 
-    {
-        row, 
-        column
-    } = next(tokens, state)!;
+    const {row, column} = next(tokens, state)!;
 
+    // collect variable names
     const names : string[] = [];
     do
     {
         const nextToken = peek(tokens, state);
         if (nextToken && nextToken.type !== "Identifier")
-            throw new Error(`Expected a variable after keyword "new" at line ${row}:${column}`);
+            errorTemplate("variableHandler", `expected a variable after keyword "new" at line ${row}:${column}`);
 
         const {value : identifierValue} = next(tokens, state)!;
         names.push(identifierValue);
@@ -70,6 +70,7 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
             break;
     } while (true);
 
+    // collect variable values
     const values : ParserToken[] = [];
     if (peek(tokens, state)?.value === "=")
     {
@@ -85,6 +86,7 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
         } while (true);
     }
 
+    // merge names and values
     for (let i = 0; i < names.length; i++)
     {
         const value = i < values.length 
@@ -95,16 +97,7 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
             ? "NewAssignment"
             : "NewDeclaration"
 
-        ast.body.push
-        (
-            {
-                type,
-                name: names[i],
-                value,
-                row,
-                column
-            }
-        );
+        ast.body.push({type, name: names[i], value, row, column});
     }
 
     return true;
@@ -115,11 +108,11 @@ export function parseBlock(tokens : Tokens, state : State) : ParserToken[]
     const openingBracket = peek(tokens, state);
     if (!openingBracket || openingBracket.value !== "{")
         throw new parseErrors.MissingTokenError("{", openingBracket?.row ?? 0, openingBracket?.column ?? 0);
-
     next(tokens, state); // remove {
 
     let block : ParserToken[] = [];
 
+    // parse body
     while (peek(tokens, state) && peek(tokens, state).value !== "}")
     {
         const temporaryAST : AST = {type: "Program", body : []};
@@ -130,7 +123,6 @@ export function parseBlock(tokens : Tokens, state : State) : ParserToken[]
     const closingBracket = peek(tokens, state);
     if (!closingBracket || closingBracket.value !== "}")
         throw new parseErrors.MissingTokenError("}", closingBracket?.row ?? 0, closingBracket?.column ?? 0);
-
     next(tokens, state); // remove "}"
 
     return block;
@@ -153,18 +145,13 @@ export function getCondition(keyword : string, token : BaseToken, tokens : Token
     if (!token || token.type !== "Keyword" || token.value !== keyword)
         return false;
 
-    const 
-    {
-        row,
-        column
-    }  = next(tokens, state)!; // delete the keyword
+    const {row, column}  = next(tokens, state)!; // delete the keyword
 
     if (!peek(tokens, state) || peek(tokens, state).value !== "(")
         throw new parseErrors.MissingTokenError("(", row, column);
     next(tokens, state); // remove (
 
     const condition = parseExpression(tokens, 0, state)!;
-
     if (!condition)
         throw new Error(`Expected condition after keyword "${keyword}" at line ${token.row}:${token.column}`);
     
@@ -189,9 +176,9 @@ export function loopControlHandler(ast : AST, token : BaseToken, tokens : Tokens
     
     const node : ParserToken =
     {
-        type: token.value === "continue" ? "ContinueStatement": "BreakStatement",
-        row: token.row,
-        column: token.column
+        type   : token.value === "continue" ? "ContinueStatement": "BreakStatement",
+        row    : token.row,
+        column : token.column
     }
 
     ast.body.push(node);
@@ -270,11 +257,7 @@ export function forHandler(ast : AST, token : BaseToken, tokens : Tokens, state 
     if (!token || token.type !== "Keyword" || token.value !== "for")
         return false;
 
-    const
-    {
-        row,
-        column
-    }  = next(tokens, state)!; // delete for
+    const{row, column}  = next(tokens, state)!; // delete for
 
     if (!peek(tokens, state) || peek(tokens, state).value !== "(")
         throw new parseErrors.MissingTokenError("(", row, column);
@@ -341,11 +324,11 @@ export function whileHandler(ast : AST, token : BaseToken, tokens : Tokens, stat
 
     const node : ParserToken = 
     {
-        type: "WhileStatement",
-        condition,
-        body: thenBlock,
-        row: token.row,
-        column: token.column
+        type   : "WhileStatement",
+        body   : thenBlock,
+        row    : token.row,
+        column : token.column,
+        condition
     };
 
     ast.body.push(node);
@@ -371,7 +354,7 @@ export function parseFunctionNode(tokens : Tokens, state : State, alreadyConsume
 
     const openingParentheses = peek(tokens, state);
     if (!openingParentheses || openingParentheses.value !== "(")
-        throw new SyntaxError(`Expected "(" after export function name "${name}" at line ${row}:${column}`);
+        errorTemplate("parseFunctionNode", `expected "(" after function name "${name}", got "${openingParentheses}" at line ${row}:${column}`);
     next(tokens, state); // eat the (
 
     // get the parameter names
@@ -386,20 +369,20 @@ export function parseFunctionNode(tokens : Tokens, state : State, alreadyConsume
             next(tokens, state);   // eat ...
             const restParam = peek(tokens, state);
             if (!restParam || restParam.type !== "Identifier")
-                throw new SyntaxError(`Expected parameter name after "..." at line ${parameter.row}:${parameter.column}`);
+                errorTemplate("parseFunctionNode", `expected parameter name after "...", got "${restParam}" at line ${parameter.row}:${parameter.column}`);
 
             parameters.push({name: next(tokens, state)!.value, default: null, rest: true});
             break; // rest param must be last
         }
 
         if (!parameter)
-            throw new SyntaxError(`Expected parameter in export function name "${name}" but got "${parameter}"`);
+            errorTemplate("parseFunctionNode", `expected parameter in function name "${name}", got "${parameter}"`);
         if (parameters.some(param => param.name === parameter.value))
-            throw new SyntaxError(`Duplicate parameter "${parameter.value}" at export function name "${name}" at line ${parameter.row}:${parameter.column}`)
+            errorTemplate("parseFunctionNode", `duplicate parameter "${parameter.value}" at function name "${name}" at line ${parameter.row}:${parameter.column}`)
         if (parameter.value === ")")
-            throw new SyntaxError(`Trailing comma in parameters of export function name "${name}"`);
+            errorTemplate("parseFunctionNode", `trailing comma in parameters of function name "${name}"`);
         if (parameter.type !== "Identifier")
-            throw new SyntaxError(`Expected parameter in export function name "${name}" with type "Identifier" but got "${parameter.value}" at line ${parameter.row}:${parameter.column}`);
+            errorTemplate("parseFunctionNode", `expected parameter in function name "${name}" with type "Identifier", got "${parameter.value}" at line ${parameter.row}:${parameter.column}`);
 
         const paramName = next(tokens, state)!.value;
 
@@ -419,7 +402,7 @@ export function parseFunctionNode(tokens : Tokens, state : State, alreadyConsume
 
     const closingParentheses = peek(tokens, state);
     if (!closingParentheses || closingParentheses.value !== ")")
-        throw new SyntaxError(`Expected ")" after parameters in export function declaration "${name}"`);
+        errorTemplate("parseFunctionNode", `expected ")" after parameters in function declaration "${name}", got "${closingParentheses}"`);
     next(tokens, state); // eat the )
 
     let body : ParserToken[];
@@ -447,7 +430,7 @@ export function functionHandler(ast : AST, token : BaseToken, tokens : Tokens, s
     if (!token || token.type !== "Keyword" || token.value !== "function")
         return false;
 
-    const node : ParserToken = parseFunctionNode(tokens, state);
+    const node = parseFunctionNode(tokens, state);
     
     ast.body.push(node);
     return true;
@@ -510,7 +493,7 @@ export function importHandler(ast : AST, token : BaseToken, tokens : Tokens, sta
 
     const pathToken = peek(tokens, state);
     if (!pathToken || pathToken.type !== "StringLiteral")
-        throw new TypeError(`Expected a file path with type "string" after keyword "import" but got "${pathToken}" at line ${row}:${column}`);
+        errorTemplate("importHandler", `expected a file path with type String after keyword "import", got "${pathToken}" at line ${row}:${column}`);
 
     const fileName = next(tokens, state)!.value;
 
@@ -539,24 +522,25 @@ export function classHandler(ast : AST, token : BaseToken, tokens : Tokens, stat
 
     const nameToken = peek(tokens, state);
     if (!nameToken || nameToken.type !== "Identifier")
-        throw new Error(`Expected class name at line ${row}:${column}`);
-    const name : string = next(tokens, state)!.value;
+        errorTemplate("classHandler", `expected class name at line ${row}:${column}`);
+    const name = next(tokens, state)!.value;
 
     // if the next token's value is "extends", the value of the token after extends must be an identifier
     let superclass : string | null = null;
     const maybeExtends = peek(tokens, state);
     if (maybeExtends && maybeExtends.type === "Keyword" && maybeExtends.value === "extends")
     {
-        next(tokens, state);   // eat extends
+        next(tokens, state); // eat extends
         const superToken = peek(tokens, state);
         if (!superToken || superToken.type !== "Identifier")
-            throw new Error(`Expected superclass after keyword "extends"`);
+            errorTemplate("classHandler", `expected superclass after keyword "extends", got "${superToken}"`);
+
         superclass = next(tokens, state)!.value;
     }
 
     if (!peek(tokens, state) || peek(tokens, state).value !== "{") 
         throw new parseErrors.MissingTokenError("{", row, column);
-    next(tokens, state);   // eat {
+    next(tokens, state); // eat {
 
     // parse the method until it hits a closing curly brace
     const methods : ParserToken[] = [];   
@@ -583,6 +567,87 @@ export function classHandler(ast : AST, token : BaseToken, tokens : Tokens, stat
         name,
         superclass,
         methods,
+        row,
+        column
+    }
+
+    ast.body.push(node);
+    return true;
+}
+
+export function tryHandler(ast : AST, token : BaseToken, tokens : Tokens, state : State) : boolean
+{
+    if (!token || token.type !== "Keyword" || token.value !== "try")
+        return false;
+
+    const {row, column} = next(tokens, state)!;
+
+    // parse try {...}
+    const openingBracket = peek(tokens, state);
+    if (!openingBracket || openingBracket.value !== "{")
+        throw new parseErrors.MissingTokenError("{", row, column);
+
+    const tryBlock = parseBlock(tokens, state);
+    
+    // skip separators
+    while (peek(tokens, state)?.type === "Separator")
+        next(tokens, state);
+
+    // parse catch
+    const maybeCatch = peek(tokens, state);
+    if (!maybeCatch || maybeCatch.type !== "Keyword" || maybeCatch.value !== "catch")
+        throw new parseErrors.MissingTokenError("catch", row, column);
+
+    next(tokens, state); // eat catch
+
+    // parse catch error variable name
+    let errorVariable : string | null = null;
+    if (peek(tokens, state)?.value === "(")
+    {
+        next(tokens, state); // eat (
+        
+        const errorToken = peek(tokens, state);
+        if (!errorToken || errorToken.type !== "Identifier")
+            errorTemplate("tryHandler", `expected identifier for catch parameter at line ${row}:${column}`);
+
+        errorVariable = next(tokens, state)!.value;
+
+        if (!peek(tokens, state) || peek(tokens, state).value !== ")")
+            throw new parseErrors.MissingTokenError(")", row, column);
+
+        next(tokens, state); // eat )
+    }
+
+    // parse catch body
+    const catchOpeningBracket = peek(tokens, state);
+    if (!catchOpeningBracket || catchOpeningBracket.value !== "{")
+        throw new parseErrors.MissingTokenError("{", row, column);
+
+    const catchBlock = parseBlock(tokens, state);
+
+    while (peek(tokens, state)?.type === "Separator")
+        next(tokens, state);
+
+    let finallyBlock : ParserToken[] | null = null;
+    const maybeFinally = peek(tokens, state);
+    if (maybeFinally && maybeFinally.type === "Keyword" && maybeFinally.value === "finally")
+    {
+        next(tokens, state); // eat finally
+
+        const finallyOpeningBracket = peek(tokens, state);
+        if (!finallyOpeningBracket || finallyOpeningBracket.value !== "{")
+            throw new parseErrors.MissingTokenError("{", row, column);
+
+        finallyBlock = parseBlock(tokens, state);
+    }
+
+    const node : ParserToken =
+    {
+        type: "TryStatement",
+        tryBlock,
+        catchBlock,
+        errorVariable : errorVariable ?? "error",
+        finallyBlock,
         row,
         column
     }

@@ -547,32 +547,16 @@ export function parseStatement(ast : AST, tokens : Tokens, state : State) : true
     // run all the handlers for keywords
     if (token.type === "Keyword")
     {
-        if (handlers.variableHandler(ast, token, tokens, state))
-            return true;
-
-        else if (handlers.ifHandler(ast, token, tokens, state))
-            return true;
-
-        else if (handlers.whileHandler(ast, token, tokens, state))
-            return true;
-
-        else if (handlers.loopControlHandler(ast, token, tokens, state))
-            return true;
-
-        else if (handlers.forHandler(ast, token, tokens, state))
-            return true;
-
-        else if (handlers.functionHandler(ast, token, tokens, state))
-            return true;
-
-        else if (handlers.returnHandler(ast, token, tokens, state))
-            return true;
-
-        else if (handlers.importHandler(ast, token, tokens, state))
-            return true;
-
-        else if (handlers.classHandler(ast, token, tokens, state))
-            return true;
+        if (handlers.variableHandler(ast, token, tokens, state))         return true;
+        else if (handlers.ifHandler(ast, token, tokens, state))          return true;
+        else if (handlers.whileHandler(ast, token, tokens, state))       return true;
+        else if (handlers.loopControlHandler(ast, token, tokens, state)) return true;
+        else if (handlers.forHandler(ast, token, tokens, state))         return true;
+        else if (handlers.functionHandler(ast, token, tokens, state))    return true;
+        else if (handlers.returnHandler(ast, token, tokens, state))      return true;
+        else if (handlers.importHandler(ast, token, tokens, state))      return true;
+        else if (handlers.classHandler(ast, token, tokens, state))       return true;
+        else if (handlers.tryHandler(ast, token, tokens, state))         return true;
     }
 
     const expression = parseExpression(tokens, 0, state)!;

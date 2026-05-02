@@ -12,7 +12,7 @@ const pkg =         JSON.parse(fs.readFileSync(path.join(projectRoot, "package.j
 const skipExe = process.env.SKIP_EXE === "true";
 
 console.log("building");
-execSync(`npx esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/PureDango.cjs --format=cjs --define:PACKAGE_NAME='"${pkg.name}"' --define:PACKAGE_VERSION='"${pkg.version}"' --define:PACKAGE_DESCRIPTION='"${pkg.description}"'`, {stdio: "inherit"});
+execSync(`npx esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/PureDango.cjs --format=cjs --define:PACKAGE_NAME='"${pkg.name}"' --define:PACKAGE_VERSION='"${pkg.version}"' --define:PACKAGE_DESCRIPTION='"${pkg.description}"'`, {stdio: "inherit"});
 
 if (skipExe) 
 {
@@ -23,7 +23,7 @@ if (skipExe)
 
 console.log("packaging");
 
-const targets = pkg.pkg?.targets || ["node18-win-x64"];
+const targets = pkg.pkg?.targets || ["node20-win-x64"];
 
 const platform = os.platform();
 const buildAll = process.env.BUILD_ALL === "true";
@@ -33,7 +33,7 @@ if (buildAll)
     const targetString = targets.join(",");
     console.log(`Building for all platforms: ${targetString}`);
     
-    execSync(`npx pkg dist/PureDango.cjs --targets ${targetString}`, {stdio: "inherit"});
+    execSync(`npx @yao-pkg/pkg dist/PureDango.cjs --targets ${targetString}`, {stdio: "inherit"});
     
     const distDir = path.join(projectRoot, "dist");
     
@@ -59,25 +59,25 @@ else
     
     if (platform === "win32") 
     {
-        target = targets.find(t => t.includes("win")) || "node18-win-x64";
+        target = targets.find(t => t.includes("win")) || "node20-win-x64";
         outputName = "PureDangoLauncher.exe";
     } 
     else if (platform === "darwin") 
     {
         const arch = os.arch();
         if (arch === "arm64")
-            target = targets.find(t => t.includes("macos-arm64")) || "node18-macos-arm64";
+            target = targets.find(t => t.includes("macos-arm64")) || "node20-macos-arm64";
         else
-            target = targets.find(t => t.includes("macos-x64")) || "node18-macos-x64";
+            target = targets.find(t => t.includes("macos-x64")) || "node20-macos-x64";
         outputName = "PureDangoLauncher-macos";
     } 
     else if (platform === "linux") 
     {
         const arch = os.arch();
         if (arch === "arm64" || arch === "aarch64")
-            target = targets.find(t => t.includes("linux-arm64")) || "node18-linux-arm64";
+            target = targets.find(t => t.includes("linux-arm64")) || "node20-linux-arm64";
         else
-            target = targets.find(t => t.includes("linux-x64")) || "node18-linux-x64";
+            target = targets.find(t => t.includes("linux-x64")) || "node20-linux-x64";
     
         outputName = "PureDangoLauncher-linux";
     } 
@@ -88,7 +88,7 @@ else
     }
     
     console.log(`Building for current platform: ${target}`);
-    execSync(`npx pkg dist/PureDango.cjs --targets ${target} --output dist/${outputName}`, {stdio: "inherit"});
+    execSync(`npx @yao-pkg/pkg dist/PureDango.cjs --targets ${target} --output dist/${outputName}`, {stdio: "inherit"});
 }
 
 console.log("Fixing line endings for shell scripts...");

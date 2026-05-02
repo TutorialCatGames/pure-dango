@@ -36,16 +36,6 @@ Example:
 pure-dango hello.pds
 ```
 
-## Known Warnings
-
-When running a `.pds` file you may see:
-
-```bash
-(node:14040) ExperimentalWarning: The Fetch API is an experimental feature.
-```
-
-This is harmless.
-
 ## Known Issues
 This language may have bugs! Please report any issues you find.
 

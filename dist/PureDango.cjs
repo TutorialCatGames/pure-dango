@@ -3852,52 +3852,52 @@ var runtimeErrors = {
   PropertyError,
   ClassError
 };
-var SyntaxError2 = class extends GeneralError {
+var SyntaxError = class extends GeneralError {
   constructor(message, row, column2) {
     super("SyntaxError", `${message} at line ${row}:${column2}`);
   }
 };
-var FunctionCallError = class extends SyntaxError2 {
+var FunctionCallError = class extends SyntaxError {
   constructor(message, row, column2) {
     super(message, row, column2);
   }
 };
-var ChainedFunctionCallError = class extends SyntaxError2 {
+var ChainedFunctionCallError = class extends SyntaxError {
   constructor(name, row, column2) {
     super(`chained function calls are not allowed: "${name}(...)()"`, row, column2);
   }
 };
-var ChainedIncDecError = class extends SyntaxError2 {
+var ChainedIncDecError = class extends SyntaxError {
   constructor(row, column2) {
     super(`chained increment/decrement operators are not allowed`, row, column2);
   }
 };
-var InvalidPostfixError = class extends SyntaxError2 {
+var InvalidPostfixError = class extends SyntaxError {
   constructor(operator, type, value, row, column2) {
     super(`cannot apply "${operator}" to ${type.toLocaleLowerCase()} "${value}"`, row, column2);
   }
 };
-var AssignmentError = class extends SyntaxError2 {
+var AssignmentError = class extends SyntaxError {
   constructor(operator, row, column2) {
     super(`left side of "${operator}" must be a variable`, row, column2);
   }
 };
-var UnexpectedTokenError = class extends SyntaxError2 {
+var UnexpectedTokenError = class extends SyntaxError {
   constructor(tokenValue, row, column2) {
     super(`unexpected token "${tokenValue}"`, row, column2);
   }
 };
-var MissingTokenError = class extends SyntaxError2 {
+var MissingTokenError = class extends SyntaxError {
   constructor(expected, row, column2) {
     super(`expected "${expected}"`, row, column2);
   }
 };
-var MissingRightSide = class extends SyntaxError2 {
+var MissingRightSide = class extends SyntaxError {
   constructor(after, row, column2) {
     super(`rxpected an expression or value after "${after}"`, row, column2);
   }
 };
-var UnaryOperatorError = class extends SyntaxError2 {
+var UnaryOperatorError = class extends SyntaxError {
   constructor(value, row, column2) {
     super(`unknown fix type for unary operator "${value}"`, row, column2);
   }
@@ -4088,7 +4088,11 @@ var operators = Object.freeze({
   // sets the current file name
   SPREAD: 36,
   // spreaded arguments
-  CALLMETHOD: 37
+  CALLMETHOD: 37,
+  TRY: 40,
+  // start try block
+  ENDTRY: 41
+  // end try-catch
 });
 var binaryOperators = Object.freeze({
   "+": operators.ADD,
@@ -4462,6 +4466,37 @@ var typeMap = /* @__PURE__ */ new Map([
     }
   ],
   [
+    "TryStatement",
+    (node, bytecode) => {
+      bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
+      const tryStartPosition = bytecode.length;
+      bytecode.push(operators.TRY, 0, 0);
+      bytecode.push(operators.PUSHSCP);
+      node.tryBlock.forEach((n) => parseObject(n, bytecode));
+      bytecode.push(operators.POPSCP);
+      const skipCatchPosition = bytecode.length;
+      bytecode.push(operators.JMP, 0);
+      const catchPosition = bytecode.length;
+      bytecode[tryStartPosition + 1] = catchPosition;
+      bytecode.push(operators.PUSHSCP);
+      bytecode.push(operators.ALLOC, node.errorVariable);
+      bytecode.push(operators.STORE, node.errorVariable);
+      node.catchBlock.forEach((n) => parseObject(n, bytecode));
+      bytecode.push(operators.POPSCP);
+      const afterCatchPosition = bytecode.length;
+      bytecode[skipCatchPosition + 1] = afterCatchPosition;
+      if (node.finallyBlock) {
+        const finallyPosition = bytecode.length;
+        bytecode[tryStartPosition + 2] = finallyPosition;
+        bytecode.push(operators.PUSHSCP);
+        node.finallyBlock.forEach((n) => parseObject(n, bytecode));
+        bytecode.push(operators.POPSCP);
+      } else
+        bytecode[tryStartPosition + 2] = afterCatchPosition;
+      bytecode.push(operators.ENDTRY);
+    }
+  ],
+  [
     "FunctionDeclaration",
     (node, bytecode) => {
       bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
@@ -4628,7 +4663,7 @@ var REGEX = new RegExp([
   "[\\n;]",
   "\\."
 ].join("|"), "gu");
-var keywordSet = /* @__PURE__ */ new Set(["new", "if", "else", "while", "continue", "break", "for", "function", "return", "import", "class", "extends", "inst", "internal"]);
+var keywordSet = /* @__PURE__ */ new Set(["new", "if", "else", "while", "continue", "break", "for", "function", "return", "import", "class", "extends", "inst", "internal", "try", "catch", "finally"]);
 var separatorSet = /* @__PURE__ */ new Set(["\n", ",", "	", ";"]);
 var operatorSet = /* @__PURE__ */ new Set(["...", "&&", "||", "{", "}", "[", "]", "!=", "<=", ">=", "==", "-=", "+=", "++", "/=", "*=", "--", "+", "-", "*", "/", "%", "=", "(", ")", "&", "^", "!", "<", ">", "?", ":", "~", "."]);
 function getType(code) {
@@ -4799,6 +4834,7 @@ function isConstant(name) {
 }
 
 // src/core/interpreter.ts
+var tryStack = [];
 var g;
 var gmpInstance;
 var gmpPrecision = 128;
@@ -5811,13 +5847,46 @@ var commands = [
       file = functionObject.definedFile;
     activeBytecode = functionObject.bytecode;
     pointer = 0;
-  }
+  },
   // CALLMETHOD
+  (bytecode) => {
+    const catchPosition = next(bytecode);
+    const finallyPosition = next(bytecode);
+    tryStack.push({
+      catchPosition,
+      finallyPosition,
+      savedPointer: pointer,
+      savedBytecode: activeBytecode,
+      savedScope: currentScope,
+      savedStack: [...stack],
+      catchExecuted: false,
+      file,
+      line,
+      column
+    });
+  },
+  // TRY
+  () => {
+    if (tryStack.length > 0) {
+      const frame = tryStack[tryStack.length - 1];
+      if (frame.finallyPosition && !frame.finallyExecuted) {
+        frame.finallyExecuted = true;
+        pointer = frame.finallyPosition;
+        return;
+      }
+      const pendingError = frame.pendingError;
+      tryStack.pop();
+      if (pendingError !== void 0)
+        throw pendingError;
+    }
+  }
+  // ENDTRY
 ];
 var asyncOpcodes = /* @__PURE__ */ new Set([10, 26, 35, 37]);
 async function interpret(bytecode, baseDir = process.cwd(), filename = "<anonymous>") {
   pointer = 0;
   stack = [];
+  tryStack = [];
   activeBytecode = bytecode;
   currentBaseDir = baseDir;
   currentScope = new Scope();
@@ -5827,35 +5896,35 @@ async function interpret(bytecode, baseDir = process.cwd(), filename = "<anonymo
   column = 0;
   importedFiles.clear();
   let steps = 0;
-  try {
-    while (true) {
-      if (pointer >= activeBytecode.length) {
-        if (callStack.length === 0)
-          break;
-        const frame = callStack.pop();
-        activeBytecode = frame.bytecode;
-        pointer = frame.pointer;
-        currentScope = frame.savedScope;
-        if (frame.returnMode === "constructor") {
-          if (!frame.pendingMethod)
-            stack.push(frame.instance);
-          if (frame.pendingMethod) {
-            const {
-              methodBytecode,
-              methodKey,
-              methodArgs
-            } = frame.pendingMethod;
-            const methodScope = new Scope(currentScope);
-            methodScope.declare("this");
-            methodScope.set("this", frame.instance);
-            frame.pendingMethod.methodParameters.forEach(
-              (parameter, i) => {
-                methodScope.declare(parameter.name);
-                methodScope.set(parameter.name, methodArgs[i] !== void 0 ? methodArgs[i] : parameter.default !== null ? evaluateDefault(parameter.default) : void 0);
-              }
-            );
-            callStack.push(
-              {
+  while (true) {
+    let caughtError = void 0;
+    try {
+      while (true) {
+        if (pointer >= activeBytecode.length) {
+          if (callStack.length === 0)
+            break;
+          const frame = callStack.pop();
+          activeBytecode = frame.bytecode;
+          pointer = frame.pointer;
+          currentScope = frame.savedScope;
+          if (frame.returnMode === "constructor") {
+            if (!frame.pendingMethod)
+              stack.push(frame.instance);
+            if (frame.pendingMethod) {
+              const { methodBytecode, methodKey, methodArgs } = frame.pendingMethod;
+              const methodScope = new Scope(currentScope);
+              methodScope.declare("this");
+              methodScope.set("this", frame.instance);
+              frame.pendingMethod.methodParameters.forEach(
+                (parameter, i) => {
+                  methodScope.declare(parameter.name);
+                  methodScope.set(
+                    parameter.name,
+                    methodArgs[i] !== void 0 ? methodArgs[i] : parameter.default !== null ? evaluateDefault(parameter.default) : void 0
+                  );
+                }
+              );
+              callStack.push({
                 bytecode: activeBytecode,
                 pointer,
                 savedScope: currentScope,
@@ -5864,55 +5933,49 @@ async function interpret(bytecode, baseDir = process.cwd(), filename = "<anonymo
                 file,
                 line,
                 column
-              }
-            );
-            currentScope = methodScope;
-            activeBytecode = methodBytecode;
-            pointer = 0;
+              });
+              currentScope = methodScope;
+              activeBytecode = methodBytecode;
+              pointer = 0;
+            }
+          } else if (frame.returnMode === "super") {
+            const nextFrame = callStack[callStack.length - 1];
+            if (!nextFrame?.pendingMethod)
+              stack.push(void 0);
+          } else if (frame.returnMode === "execute") {
+            file = frame.file;
+            line = frame.line;
+            column = frame.column;
+            currentBaseDir = frame.savedBaseDir ?? currentBaseDir;
+          } else {
+            if (stack[stack.length - 1] === void 0)
+              stack.push(void 0);
           }
-        } else if (frame.returnMode === "super") {
-          const nextFrame = callStack[callStack.length - 1];
-          if (!nextFrame?.pendingMethod)
-            stack.push(void 0);
-        } else if (frame.returnMode === "execute") {
-          file = frame.file;
-          line = frame.line;
-          column = frame.column;
-          currentBaseDir = frame.savedBaseDir ?? currentBaseDir;
-        } else {
-          if (stack[stack.length - 1] === void 0)
-            stack.push(void 0);
+          continue;
         }
-        continue;
-      }
-      const operator = activeBytecode[pointer++];
-      if (operator === 25) {
-        const frame = callStack.pop();
-        activeBytecode = frame.bytecode;
-        pointer = frame.pointer;
-        currentScope = frame.savedScope;
-        file = frame.file;
-        if (frame.returnMode === "constructor") {
-          stack.pop();
-          stack.push(frame.instance);
-          if (frame.pendingMethod) {
-            const {
-              methodBytecode,
-              methodKey,
-              methodArgs,
-              methodParameters
-            } = frame.pendingMethod;
-            const methodScope = new Scope(currentScope);
-            methodScope.declare("this");
-            methodScope.set("this", frame.instance);
-            methodParameters.forEach(
-              (parameter, i) => {
+        const operator = activeBytecode[pointer++];
+        if (operator === 25) {
+          const frame = callStack.pop();
+          activeBytecode = frame.bytecode;
+          pointer = frame.pointer;
+          currentScope = frame.savedScope;
+          file = frame.file;
+          if (frame.returnMode === "constructor") {
+            stack.pop();
+            stack.push(frame.instance);
+            if (frame.pendingMethod) {
+              const { methodBytecode, methodKey, methodArgs, methodParameters } = frame.pendingMethod;
+              const methodScope = new Scope(currentScope);
+              methodScope.declare("this");
+              methodScope.set("this", frame.instance);
+              methodParameters.forEach((parameter, i) => {
                 methodScope.declare(parameter.name);
-                methodScope.set(parameter.name, methodArgs[i] !== void 0 ? methodArgs[i] : parameter.default !== null ? evaluateDefault(parameter.default) : void 0);
-              }
-            );
-            callStack.push(
-              {
+                methodScope.set(
+                  parameter.name,
+                  methodArgs[i] !== void 0 ? methodArgs[i] : parameter.default !== null ? evaluateDefault(parameter.default) : void 0
+                );
+              });
+              callStack.push({
                 bytecode: frame.pendingMethod.returnBytecode,
                 pointer: frame.pendingMethod.returnPointer,
                 savedScope: frame.pendingMethod.returnScope,
@@ -5921,59 +5984,89 @@ async function interpret(bytecode, baseDir = process.cwd(), filename = "<anonymo
                 file,
                 line,
                 column
-              }
-            );
-            stack.pop();
-            currentScope = methodScope;
-            activeBytecode = methodBytecode;
-            pointer = 0;
+              });
+              stack.pop();
+              currentScope = methodScope;
+              activeBytecode = methodBytecode;
+              pointer = 0;
+            }
+          } else if (frame.returnMode === "super") {
+            const nextFrame = callStack[callStack.length - 1];
+            if (!nextFrame?.pendingMethod)
+              stack.push(void 0);
           }
-        } else if (frame.returnMode === "super") {
-          const nextFrame = callStack[callStack.length - 1];
-          if (!nextFrame?.pendingMethod)
-            stack.push(void 0);
+          continue;
         }
-        continue;
+        if (typeof operator !== "number")
+          throw new runtimeErrors.InternalError(
+            `operator should be a number but got "${operator}"`
+          );
+        const command = commands[operator];
+        if (command === void 0)
+          throw new runtimeErrors.InternalError(`unknown operator code: "${operator}"`);
+        if (asyncOpcodes.has(operator))
+          await command(activeBytecode);
+        else
+          command(activeBytecode);
+        if (++steps % 1e6 === 0)
+          await new Promise(setImmediate);
       }
-      if (typeof operator !== "number")
-        throw new runtimeErrors.InternalError(`operator should be a number but got "${operator}"`);
-      const command = commands[operator];
-      if (command === void 0)
-        throw new runtimeErrors.InternalError(`unknown operator code: "${operator}"`);
-      if (asyncOpcodes.has(operator)) {
-        await command(activeBytecode);
-      } else {
-        command(activeBytecode);
-      }
-      if (++steps % 1e6 === 0)
-        await new Promise(setImmediate);
+      break;
+    } catch (error) {
+      caughtError = error;
     }
-  } catch (error) {
-    if (!error.hasLocation) {
+    if (caughtError === void 0)
+      break;
+    let handled = false;
+    while (tryStack.length > 0) {
+      const frame = tryStack[tryStack.length - 1];
+      if (frame.finallyPosition && !frame.finallyExecuted) {
+        frame.finallyExecuted = true;
+        frame.pendingError = caughtError;
+        pointer = frame.finallyPosition;
+        activeBytecode = frame.savedBytecode;
+        currentScope = frame.savedScope;
+        handled = true;
+        break;
+      }
+      if (frame.catchPosition && !frame.catchExecuted) {
+        frame.catchExecuted = true;
+        pointer = frame.catchPosition;
+        activeBytecode = frame.savedBytecode;
+        currentScope = frame.savedScope;
+        stack = [...frame.savedStack];
+        const errorMessage = caughtError instanceof Error ? caughtError.message : String(caughtError);
+        stack.push(errorMessage);
+        tryStack.pop();
+        handled = true;
+        break;
+      }
+      tryStack.pop();
+    }
+    if (handled)
+      continue;
+    if (!caughtError.hasLocation) {
       const fileShortName = file.split(/[\\/]/).pop() ?? file;
-      error.message += `
+      caughtError.message += `
     at ${fileShortName} (${file}:${line}:${column})`;
       for (let i = callStack.length - 1; i >= 0; i--) {
         const frame = callStack[i];
         if (frame.returnMode === "execute") {
           const importerFile = frame.importer ?? frame.file;
           const importerShort = importerFile.split(/[\\/]/).pop() ?? importerFile;
-          error.message += `
+          caughtError.message += `
     at ${importerShort} (${importerFile}:${frame.line}:${frame.column})`;
         } else {
           const frameShort = frame.file.split(/[\\/]/).pop() ?? frame.file;
-          error.message += `
+          caughtError.message += `
     at ${frame.functionName} (${frameShort}:${frame.line}:${frame.column})`;
         }
       }
-      error.hasLocation = true;
+      caughtError.hasLocation = true;
     }
-    throw error;
+    throw caughtError;
   }
-  return {
-    stack,
-    scopes: currentScope
-  };
+  return { stack, scopes: currentScope };
 }
 async function executeInCurrentContext(code, isolateScope = false) {
   const tokens = tokenizer(code);
@@ -7334,15 +7427,12 @@ function parseInstantationExpression(token, tokens, state) {
 function variableHandler(ast, token, tokens, state) {
   if (!token || token.type !== "Keyword" || token.value !== "new")
     return false;
-  const {
-    row,
-    column: column2
-  } = next2(tokens, state);
+  const { row, column: column2 } = next2(tokens, state);
   const names = [];
   do {
     const nextToken = peek(tokens, state);
     if (nextToken && nextToken.type !== "Identifier")
-      throw new Error(`Expected a variable after keyword "new" at line ${row}:${column2}`);
+      errorTemplate("variableHandler", `expected a variable after keyword "new" at line ${row}:${column2}`);
     const { value: identifierValue } = next2(tokens, state);
     names.push(identifierValue);
     if (peek(tokens, state)?.value === ",")
@@ -7364,15 +7454,7 @@ function variableHandler(ast, token, tokens, state) {
   for (let i = 0; i < names.length; i++) {
     const value = i < values.length ? values[i] : null;
     const type = value ? "NewAssignment" : "NewDeclaration";
-    ast.body.push(
-      {
-        type,
-        name: names[i],
-        value,
-        row,
-        column: column2
-      }
-    );
+    ast.body.push({ type, name: names[i], value, row, column: column2 });
   }
   return true;
 }
@@ -7404,10 +7486,7 @@ function parseNextToken(tokens, state) {
 function getCondition(keyword, token, tokens, state) {
   if (!token || token.type !== "Keyword" || token.value !== keyword)
     return false;
-  const {
-    row,
-    column: column2
-  } = next2(tokens, state);
+  const { row, column: column2 } = next2(tokens, state);
   if (!peek(tokens, state) || peek(tokens, state).value !== "(")
     throw new parseErrors.MissingTokenError("(", row, column2);
   next2(tokens, state);
@@ -7483,10 +7562,7 @@ function checkForSemicolon(tokens, state, row, column2) {
 function forHandler(ast, token, tokens, state) {
   if (!token || token.type !== "Keyword" || token.value !== "for")
     return false;
-  const {
-    row,
-    column: column2
-  } = next2(tokens, state);
+  const { row, column: column2 } = next2(tokens, state);
   if (!peek(tokens, state) || peek(tokens, state).value !== "(")
     throw new parseErrors.MissingTokenError("(", row, column2);
   next2(tokens, state);
@@ -7536,10 +7612,10 @@ function whileHandler(ast, token, tokens, state) {
     thenBlock = parseNextToken(tokens, state);
   const node = {
     type: "WhileStatement",
-    condition,
     body: thenBlock,
     row: token.row,
-    column: token.column
+    column: token.column,
+    condition
   };
   ast.body.push(node);
   return true;
@@ -7558,7 +7634,7 @@ function parseFunctionNode(tokens, state, alreadyConsumed = false) {
     name = next2(tokens, state).value;
   const openingParentheses = peek(tokens, state);
   if (!openingParentheses || openingParentheses.value !== "(")
-    throw new SyntaxError(`Expected "(" after export function name "${name}" at line ${row}:${column2}`);
+    errorTemplate("parseFunctionNode", `expected "(" after function name "${name}", got "${openingParentheses}" at line ${row}:${column2}`);
   next2(tokens, state);
   const parameters = [];
   while (peek(tokens, state) && peek(tokens, state).value !== ")") {
@@ -7567,18 +7643,18 @@ function parseFunctionNode(tokens, state, alreadyConsumed = false) {
       next2(tokens, state);
       const restParam = peek(tokens, state);
       if (!restParam || restParam.type !== "Identifier")
-        throw new SyntaxError(`Expected parameter name after "..." at line ${parameter.row}:${parameter.column}`);
+        errorTemplate("parseFunctionNode", `expected parameter name after "...", got "${restParam}" at line ${parameter.row}:${parameter.column}`);
       parameters.push({ name: next2(tokens, state).value, default: null, rest: true });
       break;
     }
     if (!parameter)
-      throw new SyntaxError(`Expected parameter in export function name "${name}" but got "${parameter}"`);
+      errorTemplate("parseFunctionNode", `expected parameter in function name "${name}", got "${parameter}"`);
     if (parameters.some((param) => param.name === parameter.value))
-      throw new SyntaxError(`Duplicate parameter "${parameter.value}" at export function name "${name}" at line ${parameter.row}:${parameter.column}`);
+      errorTemplate("parseFunctionNode", `duplicate parameter "${parameter.value}" at function name "${name}" at line ${parameter.row}:${parameter.column}`);
     if (parameter.value === ")")
-      throw new SyntaxError(`Trailing comma in parameters of export function name "${name}"`);
+      errorTemplate("parseFunctionNode", `trailing comma in parameters of function name "${name}"`);
     if (parameter.type !== "Identifier")
-      throw new SyntaxError(`Expected parameter in export function name "${name}" with type "Identifier" but got "${parameter.value}" at line ${parameter.row}:${parameter.column}`);
+      errorTemplate("parseFunctionNode", `expected parameter in function name "${name}" with type "Identifier", got "${parameter.value}" at line ${parameter.row}:${parameter.column}`);
     const paramName = next2(tokens, state).value;
     if (peek(tokens, state)?.value === "=") {
       next2(tokens, state);
@@ -7592,7 +7668,7 @@ function parseFunctionNode(tokens, state, alreadyConsumed = false) {
   }
   const closingParentheses = peek(tokens, state);
   if (!closingParentheses || closingParentheses.value !== ")")
-    throw new SyntaxError(`Expected ")" after parameters in export function declaration "${name}"`);
+    errorTemplate("parseFunctionNode", `expected ")" after parameters in function declaration "${name}", got "${closingParentheses}"`);
   next2(tokens, state);
   let body;
   const openingBracket = peek(tokens, state);
@@ -7653,7 +7729,7 @@ function importHandler(ast, token, tokens, state) {
   }
   const pathToken = peek(tokens, state);
   if (!pathToken || pathToken.type !== "StringLiteral")
-    throw new TypeError(`Expected a file path with type "string" after keyword "import" but got "${pathToken}" at line ${row}:${column2}`);
+    errorTemplate("importHandler", `expected a file path with type String after keyword "import", got "${pathToken}" at line ${row}:${column2}`);
   const fileName = next2(tokens, state).value;
   const node = {
     type: "ImportStatement",
@@ -7673,7 +7749,7 @@ function classHandler(ast, token, tokens, state) {
   } = next2(tokens, state);
   const nameToken = peek(tokens, state);
   if (!nameToken || nameToken.type !== "Identifier")
-    throw new Error(`Expected class name at line ${row}:${column2}`);
+    errorTemplate("classHandler", `expected class name at line ${row}:${column2}`);
   const name = next2(tokens, state).value;
   let superclass = null;
   const maybeExtends = peek(tokens, state);
@@ -7681,7 +7757,7 @@ function classHandler(ast, token, tokens, state) {
     next2(tokens, state);
     const superToken = peek(tokens, state);
     if (!superToken || superToken.type !== "Identifier")
-      throw new Error(`Expected superclass after keyword "extends"`);
+      errorTemplate("classHandler", `expected superclass after keyword "extends", got "${superToken}"`);
     superclass = next2(tokens, state).value;
   }
   if (!peek(tokens, state) || peek(tokens, state).value !== "{")
@@ -7705,6 +7781,58 @@ function classHandler(ast, token, tokens, state) {
     name,
     superclass,
     methods,
+    row,
+    column: column2
+  };
+  ast.body.push(node);
+  return true;
+}
+function tryHandler(ast, token, tokens, state) {
+  if (!token || token.type !== "Keyword" || token.value !== "try")
+    return false;
+  const { row, column: column2 } = next2(tokens, state);
+  const openingBracket = peek(tokens, state);
+  if (!openingBracket || openingBracket.value !== "{")
+    throw new parseErrors.MissingTokenError("{", row, column2);
+  const tryBlock = parseBlock(tokens, state);
+  while (peek(tokens, state)?.type === "Separator")
+    next2(tokens, state);
+  const maybeCatch = peek(tokens, state);
+  if (!maybeCatch || maybeCatch.type !== "Keyword" || maybeCatch.value !== "catch")
+    throw new parseErrors.MissingTokenError("catch", row, column2);
+  next2(tokens, state);
+  let errorVariable = null;
+  if (peek(tokens, state)?.value === "(") {
+    next2(tokens, state);
+    const errorToken = peek(tokens, state);
+    if (!errorToken || errorToken.type !== "Identifier")
+      errorTemplate("tryHandler", `expected identifier for catch parameter at line ${row}:${column2}`);
+    errorVariable = next2(tokens, state).value;
+    if (!peek(tokens, state) || peek(tokens, state).value !== ")")
+      throw new parseErrors.MissingTokenError(")", row, column2);
+    next2(tokens, state);
+  }
+  const catchOpeningBracket = peek(tokens, state);
+  if (!catchOpeningBracket || catchOpeningBracket.value !== "{")
+    throw new parseErrors.MissingTokenError("{", row, column2);
+  const catchBlock = parseBlock(tokens, state);
+  while (peek(tokens, state)?.type === "Separator")
+    next2(tokens, state);
+  let finallyBlock = null;
+  const maybeFinally = peek(tokens, state);
+  if (maybeFinally && maybeFinally.type === "Keyword" && maybeFinally.value === "finally") {
+    next2(tokens, state);
+    const finallyOpeningBracket = peek(tokens, state);
+    if (!finallyOpeningBracket || finallyOpeningBracket.value !== "{")
+      throw new parseErrors.MissingTokenError("{", row, column2);
+    finallyBlock = parseBlock(tokens, state);
+  }
+  const node = {
+    type: "TryStatement",
+    tryBlock,
+    catchBlock,
+    errorVariable: errorVariable ?? "error",
+    finallyBlock,
     row,
     column: column2
   };
@@ -8198,24 +8326,16 @@ function parseStatement(ast, tokens, state) {
   if (!token)
     return null;
   if (token.type === "Keyword") {
-    if (variableHandler(ast, token, tokens, state))
-      return true;
-    else if (ifHandler(ast, token, tokens, state))
-      return true;
-    else if (whileHandler(ast, token, tokens, state))
-      return true;
-    else if (loopControlHandler(ast, token, tokens, state))
-      return true;
-    else if (forHandler(ast, token, tokens, state))
-      return true;
-    else if (functionHandler(ast, token, tokens, state))
-      return true;
-    else if (returnHandler(ast, token, tokens, state))
-      return true;
-    else if (importHandler(ast, token, tokens, state))
-      return true;
-    else if (classHandler(ast, token, tokens, state))
-      return true;
+    if (variableHandler(ast, token, tokens, state)) return true;
+    else if (ifHandler(ast, token, tokens, state)) return true;
+    else if (whileHandler(ast, token, tokens, state)) return true;
+    else if (loopControlHandler(ast, token, tokens, state)) return true;
+    else if (forHandler(ast, token, tokens, state)) return true;
+    else if (functionHandler(ast, token, tokens, state)) return true;
+    else if (returnHandler(ast, token, tokens, state)) return true;
+    else if (importHandler(ast, token, tokens, state)) return true;
+    else if (classHandler(ast, token, tokens, state)) return true;
+    else if (tryHandler(ast, token, tokens, state)) return true;
   }
   const expression = parseExpression(tokens, 0, state);
   if (expression)

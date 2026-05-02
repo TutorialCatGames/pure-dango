@@ -27,7 +27,7 @@ jobs:
       - name: Register pure-dango command
         run: |
           chmod +x bin/pure-dango.sh
-          sudo ln -s "$(pwd)/bin/pure-dango.sh" /usr/local/bin/pure-dango
+          sudo ln -s -f "$(pwd)/bin/pure-dango.sh" /usr/local/bin/pure-dango
 
       - name: Test pure-dango
         run: pure-dango docs/answer_keys/test.pds
@@ -52,7 +52,7 @@ jobs:
       - name: Register pure-dango command
         run: |
           chmod +x bin/pure-dango.sh
-          sudo ln -s "$(pwd)/bin/pure-dango.sh" /usr/local/bin/pure-dango
+          sudo ln -s -f "$(pwd)/bin/pure-dango.sh" /usr/local/bin/pure-dango
 
       - name: Test pure-dango
         run: pure-dango docs/answer_keys/test.pds

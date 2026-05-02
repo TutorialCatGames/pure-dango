@@ -18,10 +18,10 @@ cd <path/to/pure-dango>
 installer.bat
 ```
 
-### Linux:
+### Linux/macOS:
 ``` bash
 chmod +x bin/pure-dango.sh
-sudo ln -s "$(pwd)/bin/pure-dango.sh" /usr/local/bin/pure-dango
+sudo ln -s -f "$(pwd)/bin/pure-dango.sh" /usr/local/bin/pure-dango
 ```
 
 ## Quick Start

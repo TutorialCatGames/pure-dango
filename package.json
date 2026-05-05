@@ -1,6 +1,6 @@
 {
     "name": "pure-dango",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "type": "module",
     "description": "A simple programming language built in JavaScript",
     "license": "UNLICENSED",

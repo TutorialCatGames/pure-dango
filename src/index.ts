@@ -38,7 +38,7 @@ const
 const packageJson =
 {
     name:        typeof PACKAGE_NAME        !== "undefined" ? PACKAGE_NAME        : "pure-dango",
-    version:     typeof PACKAGE_VERSION     !== "undefined" ? PACKAGE_VERSION     : "1.4.0",
+    version:     typeof PACKAGE_VERSION     !== "undefined" ? PACKAGE_VERSION     : "1.5.0",
     description: typeof PACKAGE_DESCRIPTION !== "undefined" ? PACKAGE_DESCRIPTION : "A simple programming language built in JavaScript"
 };
 

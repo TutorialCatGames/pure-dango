@@ -30,9 +30,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// ../node_modules/gmp-wasm/dist/index.umd.js
+// node_modules/gmp-wasm/dist/index.umd.js
 var require_index_umd = __commonJS({
-  "../node_modules/gmp-wasm/dist/index.umd.js"(exports2, module2) {
+  "node_modules/gmp-wasm/dist/index.umd.js"(exports2, module2) {
     (function(global, factory) {
       typeof exports2 === "object" && typeof module2 !== "undefined" ? factory(exports2) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.gmp = {}));
     })(exports2, (function(exports3) {

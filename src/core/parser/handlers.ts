@@ -309,6 +309,57 @@ export function forHandler(ast : AST, token : BaseToken, tokens : Tokens, state 
     return true;
 }
 
+export function doWhileHandler(ast : AST, token : BaseToken, tokens : Tokens, state : State) : boolean
+{
+    if (!token || token.type !== "Keyword" || token.value !== "do")
+        return false;
+ 
+    const {row, column} = next(tokens, state)!; // eat do
+ 
+    // parse the body block
+    const openingBracket = peek(tokens, state);
+    if (!openingBracket || openingBracket.value !== "{")
+        throw new parseErrors.MissingTokenError("{", row, column);
+ 
+    const body : ParserToken[] = parseBlock(tokens, state);
+ 
+    // skip separators between } and while
+    while (peek(tokens, state)?.type === "Separator")
+        next(tokens, state);
+ 
+    // expect while keyword
+    const whileToken = peek(tokens, state);
+    if (!whileToken || whileToken.type !== "Keyword" || whileToken.value !== "while")
+        throw new parseErrors.MissingTokenError("while", row, column);
+    next(tokens, state); // eat while
+ 
+    // expect (condition)
+    if (!peek(tokens, state) || peek(tokens, state).value !== "(")
+        throw new parseErrors.MissingTokenError("(", row, column);
+    next(tokens, state); // eat (
+ 
+    const condition = parseExpression(tokens, 0, state)!;
+    if (!condition)
+        throw new Error(`Expected condition after "do...while" at line ${row}:${column}`);
+ 
+    if (!peek(tokens, state) || peek(tokens, state).value !== ")")
+        throw new parseErrors.MissingTokenError(")", condition.row, condition.column);
+    next(tokens, state); // eat )
+ 
+    const node : ParserToken =
+    {
+        type      : "DoWhileStatement",
+        body,
+        condition,
+        row,
+        column
+    };
+ 
+    ast.body.push(node);
+    return true;
+}
+
+
 export function whileHandler(ast : AST, token : BaseToken, tokens : Tokens, state : State) : boolean
 {
     const condition : ParserToken | false = getCondition("while", token, tokens, state);

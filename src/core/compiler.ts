@@ -634,6 +634,57 @@ const typeMap : TypeMap = new Map([
         }
     ],
 
+    ["DoWhileStatement",
+        (node : any, bytecode : Bytecode) : void =>
+        {
+            bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
+
+            const start : number = bytecode.length;
+
+            const loopInfo : LoopInfo =
+            {
+                start,
+                continueTarget: null,
+                end: null,
+                breakPositions: [],
+                continuePositions: []
+            };
+            loopStack.push(loopInfo);
+
+            bytecode.push(operators.PUSHSCP);
+            node.body.forEach((n : any) => parseObject(n, bytecode));
+            bytecode.push(operators.POPSCP);
+
+            loopInfo.continueTarget = bytecode.length;
+
+            parseObject(node.condition, bytecode, true);
+            const jumpToEndPosition : number = bytecode.length;
+            bytecode.push(operators.JZ, 0);       // jump to end if condition is falsy
+            bytecode.push(operators.JMP, start);
+
+            const end : number = bytecode.length;
+            loopInfo.end = end;
+            bytecode[jumpToEndPosition + 1] = end;
+
+            const positions : Array<{position : number, target : number | null}> =
+            [
+                ...loopInfo.breakPositions.map(position => ({
+                    position,
+                    target: end
+                })),
+
+                ...loopInfo.continuePositions.map(position => ({
+                    position,
+                    target: loopInfo.continueTarget
+                }))
+            ]
+
+            for (const {position, target} of positions) bytecode[position + 1] = target;
+
+            loopStack.pop();
+        }
+    ],
+
     ["TryStatement", 
         (node : any, bytecode : Bytecode) : void =>
         {

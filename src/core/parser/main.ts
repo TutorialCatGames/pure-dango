@@ -549,6 +549,7 @@ export function parseStatement(ast : AST, tokens : Tokens, state : State) : true
     {
         if (handlers.variableHandler(ast, token, tokens, state))         return true;
         else if (handlers.ifHandler(ast, token, tokens, state))          return true;
+        else if (handlers.doWhileHandler(ast, token, tokens, state))     return true;
         else if (handlers.whileHandler(ast, token, tokens, state))       return true;
         else if (handlers.loopControlHandler(ast, token, tokens, state)) return true;
         else if (handlers.forHandler(ast, token, tokens, state))         return true;

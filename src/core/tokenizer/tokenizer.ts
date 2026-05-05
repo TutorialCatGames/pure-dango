@@ -43,7 +43,7 @@ type BaseToken =
 type MatchIterable = IterableIterator<RegExpMatchArray>; 
 
 /// the sets for types
-const keywordSet = new Set(["new","if","else","while","continue","break","for","function","return","import","class","extends","inst","internal","try","catch","finally"]);
+const keywordSet = new Set(["new","if","else","while","continue","break","for","function","return","import","class","extends","inst","internal","try","catch","finally","do"]);
 const separatorSet = new Set(["\n", ",", "\t", ";"]);
 const operatorSet = new Set(["...", "&&","||","{","}","[","]","!=","<=",">=","==","-=","+=","++","/=","*=","--","+","-","*","/","%","=","(",")",  "&","^","!","<",">","?",":",  "~",".",  ]);
 

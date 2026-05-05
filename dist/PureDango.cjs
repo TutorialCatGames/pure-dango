@@ -30,9 +30,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// node_modules/gmp-wasm/dist/index.umd.js
+// ../node_modules/gmp-wasm/dist/index.umd.js
 var require_index_umd = __commonJS({
-  "node_modules/gmp-wasm/dist/index.umd.js"(exports2, module2) {
+  "../node_modules/gmp-wasm/dist/index.umd.js"(exports2, module2) {
     (function(global, factory) {
       typeof exports2 === "object" && typeof module2 !== "undefined" ? factory(exports2) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.gmp = {}));
     })(exports2, (function(exports3) {
@@ -4466,6 +4466,44 @@ var typeMap = /* @__PURE__ */ new Map([
     }
   ],
   [
+    "DoWhileStatement",
+    (node, bytecode) => {
+      bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
+      const start = bytecode.length;
+      const loopInfo = {
+        start,
+        continueTarget: null,
+        end: null,
+        breakPositions: [],
+        continuePositions: []
+      };
+      loopStack.push(loopInfo);
+      bytecode.push(operators.PUSHSCP);
+      node.body.forEach((n) => parseObject(n, bytecode));
+      bytecode.push(operators.POPSCP);
+      loopInfo.continueTarget = bytecode.length;
+      parseObject(node.condition, bytecode, true);
+      const jumpToEndPosition = bytecode.length;
+      bytecode.push(operators.JZ, 0);
+      bytecode.push(operators.JMP, start);
+      const end = bytecode.length;
+      loopInfo.end = end;
+      bytecode[jumpToEndPosition + 1] = end;
+      const positions = [
+        ...loopInfo.breakPositions.map((position) => ({
+          position,
+          target: end
+        })),
+        ...loopInfo.continuePositions.map((position) => ({
+          position,
+          target: loopInfo.continueTarget
+        }))
+      ];
+      for (const { position, target } of positions) bytecode[position + 1] = target;
+      loopStack.pop();
+    }
+  ],
+  [
     "TryStatement",
     (node, bytecode) => {
       bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
@@ -4662,7 +4700,7 @@ var REGEX = new RegExp([
   "[\\n;]",
   "\\."
 ].join("|"), "gu");
-var keywordSet = /* @__PURE__ */ new Set(["new", "if", "else", "while", "continue", "break", "for", "function", "return", "import", "class", "extends", "inst", "internal", "try", "catch", "finally"]);
+var keywordSet = /* @__PURE__ */ new Set(["new", "if", "else", "while", "continue", "break", "for", "function", "return", "import", "class", "extends", "inst", "internal", "try", "catch", "finally", "do"]);
 var separatorSet = /* @__PURE__ */ new Set(["\n", ",", "	", ";"]);
 var operatorSet = /* @__PURE__ */ new Set(["...", "&&", "||", "{", "}", "[", "]", "!=", "<=", ">=", "==", "-=", "+=", "++", "/=", "*=", "--", "+", "-", "*", "/", "%", "=", "(", ")", "&", "^", "!", "<", ">", "?", ":", "~", "."]);
 function getType(code) {
@@ -7601,6 +7639,39 @@ function forHandler(ast, token, tokens, state) {
   ast.body.push(node);
   return true;
 }
+function doWhileHandler(ast, token, tokens, state) {
+  if (!token || token.type !== "Keyword" || token.value !== "do")
+    return false;
+  const { row, column: column2 } = next2(tokens, state);
+  const openingBracket = peek(tokens, state);
+  if (!openingBracket || openingBracket.value !== "{")
+    throw new parseErrors.MissingTokenError("{", row, column2);
+  const body = parseBlock(tokens, state);
+  while (peek(tokens, state)?.type === "Separator")
+    next2(tokens, state);
+  const whileToken = peek(tokens, state);
+  if (!whileToken || whileToken.type !== "Keyword" || whileToken.value !== "while")
+    throw new parseErrors.MissingTokenError("while", row, column2);
+  next2(tokens, state);
+  if (!peek(tokens, state) || peek(tokens, state).value !== "(")
+    throw new parseErrors.MissingTokenError("(", row, column2);
+  next2(tokens, state);
+  const condition = parseExpression(tokens, 0, state);
+  if (!condition)
+    throw new Error(`Expected condition after "do...while" at line ${row}:${column2}`);
+  if (!peek(tokens, state) || peek(tokens, state).value !== ")")
+    throw new parseErrors.MissingTokenError(")", condition.row, condition.column);
+  next2(tokens, state);
+  const node = {
+    type: "DoWhileStatement",
+    body,
+    condition,
+    row,
+    column: column2
+  };
+  ast.body.push(node);
+  return true;
+}
 function whileHandler(ast, token, tokens, state) {
   const condition = getCondition("while", token, tokens, state);
   if (!condition)
@@ -8329,6 +8400,7 @@ function parseStatement(ast, tokens, state) {
   if (token.type === "Keyword") {
     if (variableHandler(ast, token, tokens, state)) return true;
     else if (ifHandler(ast, token, tokens, state)) return true;
+    else if (doWhileHandler(ast, token, tokens, state)) return true;
     else if (whileHandler(ast, token, tokens, state)) return true;
     else if (loopControlHandler(ast, token, tokens, state)) return true;
     else if (forHandler(ast, token, tokens, state)) return true;

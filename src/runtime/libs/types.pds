@@ -689,6 +689,9 @@ class Array extends BaseArray
 
     average()
         return this.sum() / this.length();
+
+    isArray()
+        return typeof(this.__INIT__) == "array";
 }
 
 class String extends BaseArray

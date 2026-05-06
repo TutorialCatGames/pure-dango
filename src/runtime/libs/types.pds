@@ -1192,5 +1192,3 @@ class Float
     constructor(x)
         this.__INIT__ = tofloat(x)
 }
-
-print(inst Float("1"))

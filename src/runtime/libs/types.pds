@@ -1192,3 +1192,27 @@ class Float
     constructor(x)
         this.__INIT__ = tofloat(x)
 }
+
+Float.isFloat = function(x) 
+{
+    if (typeof(x) == "float")
+        return true;
+    if (typeof(x) == "object" && x.__INIT__ != undefined)
+        return typeof(x.__INIT__) == "float";
+    return false;
+}
+
+Float.toBigInt = function(x) 
+{
+    if (typeof(x) == "float")
+        return tobigint(x);
+    return tobigint(x.__INIT__);
+}
+
+Float.toString = function(x) 
+{
+    if (typeof(x) == "float")
+        return tostr(x);
+
+    return tostr(x.__INIT__);
+}

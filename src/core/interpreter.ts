@@ -238,7 +238,7 @@ function simpleStack(value : any) : void
         stack.push(value);
 
     else if (typeof value === "boolean") 
-        stack.push(value ? 1 : 0);
+        stack.push(value);
     else if (typeof value === "bigint")  
         stack.push(value);
 
@@ -355,7 +355,7 @@ function commandMapBinaryOperators(
         }
         
         const result = isGFloat(left) || isGFloat(right) ? GMPFunc(left, right) : func(left, right);
-        stack.push(typeof result === "boolean" ? (result ? 1 : 0) : result);
+        stack.push(result); 
     }
 }
 
@@ -438,10 +438,10 @@ export class Scope
         if (!parent)
         {
             this.declare("true");
-            this.set("true", 1);
+            this.set("true", true);
 
             this.declare("false");
-            this.set("false", 0);
+            this.set("false", false);
 
             this.declare("null");
             this.set("null", null);
@@ -867,9 +867,9 @@ const commands : Array<Function | undefined> =
     {
         let value = unwrapInstance(stack.pop());
         if (isGFloat(value))
-            value = value.inner.isZero() ? 0 : 1;
+            value = value.inner.isZero();
 
-        simpleStack(value ? 0: 1);
+        stack.push(value);
     },   // NOT
 
     () : void => 

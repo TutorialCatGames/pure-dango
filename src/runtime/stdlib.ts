@@ -782,8 +782,12 @@ export const syncFunctions =
         if (Array.isArray(value))        
             return "array";
 
-        if (value?.isInstance)           
-            return value.class;
+        if (value?.isInstance)      
+        {
+            const initType = syncFunctions.typeof([], () => "", value.properties["0"]);
+            return initType || value.class;
+        }
+
         if (value?.type === "class")              
             return "class";
 

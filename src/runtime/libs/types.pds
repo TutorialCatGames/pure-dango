@@ -1180,3 +1180,5 @@ class String extends BaseArray
     wrap(x, y)
         return concat(x, this.__INIT__, y);
 }
+
+print(typeof(inst Array("hi")));

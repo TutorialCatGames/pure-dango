@@ -1187,4 +1187,3 @@ class String extends BaseArray
         return typeof(this.__INIT__) == "string";
 }
 
-print(String.isString("hi"));

@@ -1097,13 +1097,22 @@ export const syncFunctions =
             const digits = Math.ceil(value.inner.precisionBits / 3.32) + 10;
             return value.inner.toFixed(digits);
         }
-        else if (value?.type === "class")
+        else if (value?.isInstance) 
         {
-            if (value?.properties?.__INIT__)
-                return value.properties.__INIT__;
-            else
-                return `[class ${value.class}]`
+            const init = value.properties["0"];
+            if (isGFloat(init))
+            {
+                const digits = Math.ceil(init.inner.precisionBits / 3.32) + 10;
+                return init.inner.toFixed(digits);
+            }
+            if (init !== undefined && init !== null)
+                return String(init);
+            
+            return `[${value.class}]`;
         }
+        else if (value?.type === "class")
+            return `[class ${value.class}]`
+        
         else if (Array.isArray(value) || (typeof value === "object" && value !== null))
             return JSON.stringify(unwrap(value));
         else

@@ -1064,13 +1064,7 @@ const commands : Array<Function | undefined> =
 
         if (array?.type === "object")
         {
-            stack.push
-            (
-                array.value
-                [
-                    String(index)
-                ] ?? undefined
-            );
+            stack.push(array.value[String(index)] ?? undefined);
             return;
         }
 

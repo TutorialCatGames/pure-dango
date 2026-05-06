@@ -158,7 +158,7 @@ const origins : Record<string, Function> = Object.freeze({
     ContinueStatement : (node : any, padding : string) : string => `${padding}continue;`,
 
     ImportStatement : (node : any, padding : string) : string => `${padding}import "${node.path}"`
-})
+});
 
 export const generateOrigin = (node : any, indent = 0) : string | null =>
 {
@@ -205,8 +205,8 @@ export const typeHandler = (item: any) : string =>
 {
     if (item.isInstance)
     {
-        if (item.properties.__INIT__)
-            return item.properties.__INIT__;
+        if (item.properties["0"])
+            return format(item.properties["0"])!;
 
         const properties = Object.entries(item.properties ?? {})
             .filter(([key, _]) => !((key as string).startsWith("__") && (key as string).endsWith("__")))
@@ -258,7 +258,7 @@ export const format = (item: any) : string | null =>
         return item;
 
     if (isGFloat(item))             
-        return item.toString();
+        return item.inner.toString();
 
     if (Array.isArray(item))                 
         return "[" + 
@@ -381,7 +381,8 @@ export const loadBytecode = (cacheFolder: string, srcFile: string) : Bytecode | 
     const stats = fs.statSync(srcFile);
     const srcMTime = stats.mtimeMs;
 
-    if (data.version !== 1 || data.mtime !== srcMTime) {
+    if (data.version !== 1 || data.mtime !== srcMTime) 
+    {
         console.log("recompile");
         return null;
     }

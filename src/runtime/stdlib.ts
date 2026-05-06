@@ -771,6 +771,8 @@ export const syncFunctions =
             return "null";
         if (value === undefined)   
             return "undefined";
+        if (typeof value === "boolean")
+            return "boolean";
 
         if (isGFloat(value))
             return "float";

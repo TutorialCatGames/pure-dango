@@ -108,7 +108,7 @@ if (fs.existsSync(shellScript))
 }
 
 console.log("Creating source archive...");
-const zipPath = path.join(projectRoot, "..", `${pkg.name}-${pkg.version}-source.zip`);
+const zipPath = path.join(projectRoot, "..", `${pkg.name}-v${pkg.version}-source.zip`);
 const output = fs.createWriteStream(zipPath);
 const archive = archiver("zip", {zlib: {level: 9}});
 

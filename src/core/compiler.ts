@@ -738,7 +738,7 @@ const typeMap : TypeMap = new Map([
             
             const newBytecode : Bytecode = [];
         
-            node.body.forEach((n : any) => parseObject(n, newBytecode));
+            (node.body ?? []).forEach((n : any) => parseObject(n, newBytecode));
 
             // make sure the function returns smth
             newBytecode.push(operators.PUSH, null);
@@ -805,7 +805,7 @@ const typeMap : TypeMap = new Map([
         {
             const newBytecode : Bytecode = [];
 
-            node.body.forEach((n : any) => parseObject(n, newBytecode));
+            (node.body ?? []).forEach((n : any) => parseObject(n, newBytecode));
 
             newBytecode.push(operators.PUSH, null);
             newBytecode.push(operators.RETURN);

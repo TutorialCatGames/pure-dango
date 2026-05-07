@@ -6,3 +6,4 @@
 *.ts text   eol=lf
 *.json text eol=lf
 *.md text   eol=lf
+*.pds text  eol=lf

@@ -6,7 +6,7 @@ import "errors.pds";
 class BaseArray
 {
     constructor(x) 
-        this.__INIT__ = x
+        this.__INIT__ = x;
 
     indexOf(x)
     {
@@ -41,17 +41,7 @@ class BaseArray
         return len(this.__INIT__);
 
     toString()
-    {
-        new result = "";
-        new val = this.__INIT__;
-        new length = len(val);
-
-        new i = 0;
-        for (i = 0; i < length; i++)
-            result = concat(result, val[i])
-        
-        return result;
-    }
+        return tostr(this.__INIT__);
 
     isEmpty()
         return len(this.__INIT__) == 0;
@@ -1190,11 +1180,29 @@ class String extends BaseArray
 class Float
 {
     constructor(x)
-        this.__INIT__ = tofloat(x)
+        this.__INIT__ = tofloat(x);
+
+    toString()
+    {
+        return tostr(this.__INIT__);
+    }
+    
+    toBigInt()
+        return tobigint(this.__INIT__);
+    
+    abs()
+    {
+        new val = this.__INIT__;
+        if (val < 0)
+            return inst Float(-val);
+        return inst Float(val);
+    }
+    
+    valueOf()
+        return this.__INIT__;
 }
 
-Float.isFloat = function(x) 
-{
+Float.isFloat = function(x) {
     if (typeof(x) == "float")
         return true;
     if (typeof(x) == "object" && x.__INIT__ != undefined)
@@ -1202,17 +1210,17 @@ Float.isFloat = function(x)
     return false;
 }
 
-Float.toBigInt = function(x) 
-{
+Float.toBigInt = function(x) {
     if (typeof(x) == "float")
         return tobigint(x);
     return tobigint(x.__INIT__);
 }
 
-Float.toString = function(x) 
-{
+Float.toString = function(x) {
     if (typeof(x) == "float")
         return tostr(x);
 
     return tostr(x.__INIT__);
 }
+
+print(inst Float("1").toString());

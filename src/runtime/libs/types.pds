@@ -1222,5 +1222,3 @@ Float.toString = function(x) {
 
     return tostr(x.__INIT__);
 }
-
-print(inst Float("1").toString());

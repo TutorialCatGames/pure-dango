@@ -1035,7 +1035,7 @@ const commands : Array<Function | undefined> =
         {
             const key = String(index);
 
-            if (array.properties && key in array.properties)
+            if (array.properties && Object.prototype.hasOwnProperty.call(array.properties, key))
             {
                 stack.push(array.properties[key]);
                 return;
@@ -1046,7 +1046,7 @@ const commands : Array<Function | undefined> =
             if (array.methods === undefined)
                 throw new runtimeErrors.ClassError(array?.name);
 
-            if (methods[key] === undefined)
+            if (!Object.prototype.hasOwnProperty.call(methods, key))
                 throw new runtimeErrors.MethodError(key);
 
             const method = methods[key];
@@ -1276,14 +1276,12 @@ const commands : Array<Function | undefined> =
 
         if (object?.type === "class")
         {
-            if (object.properties && key in object.properties)
-            {
+            if (object.properties && Object.prototype.hasOwnProperty.call(object.properties, key))
                 functionObject = object.properties[key];
-            }
             else
             {
                 const methods = object.isInstance ? object.methods : collectMethods(object);
-                if (!methods[key]) 
+                if (!Object.prototype.hasOwnProperty.call(methods, key))
                     throw new runtimeErrors.MethodError(key);
 
                 const method = methods[key];
@@ -1522,7 +1520,7 @@ export async function interpret(
  
                         if (frame.pendingMethod)
                         {
-                            const { methodBytecode, methodKey, methodArgs } = frame.pendingMethod;
+                            const {methodBytecode, methodKey, methodArgs} = frame.pendingMethod;
  
                             const methodScope = new Scope(currentScope);
                             methodScope.declare("this");

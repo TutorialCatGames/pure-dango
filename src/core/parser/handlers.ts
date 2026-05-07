@@ -348,7 +348,7 @@ export function doWhileHandler(ast : AST, token : BaseToken, tokens : Tokens, st
  
     const node : ParserToken =
     {
-        type      : "DoWhileStatement",
+        type : "DoWhileStatement",
         body,
         condition,
         row,
@@ -461,7 +461,11 @@ export function parseFunctionNode(tokens : Tokens, state : State, alreadyConsume
     if (openingBracket && openingBracket.value === "{")
         body = parseBlock(tokens, state);
     else
+    {
         body = parseNextToken(tokens, state);
+        if (peek(tokens, state)?.value === ";")
+            next(tokens, state);
+    }
 
     const node : ParserToken =
     {
@@ -565,11 +569,7 @@ export function classHandler(ast : AST, token : BaseToken, tokens : Tokens, stat
     if (!token || token.type !== "Keyword" || token.value !== "class")
         return false;
 
-    const 
-    {
-        row,
-        column
-    }  = next(tokens, state)!;
+    const {row, column}  = next(tokens, state)!;
 
     const nameToken = peek(tokens, state);
     if (!nameToken || nameToken.type !== "Identifier")

@@ -3,6 +3,7 @@ import path            from "path";
 import {fileURLToPath} from "url";
 import {execSync}      from "child_process";
 import os              from "os";
+import archiver        from "archiver";
 
 const __filename =  fileURLToPath(import.meta.url);
 const __dirname =   path.dirname(__filename);
@@ -10,6 +11,14 @@ const projectRoot = path.join(__dirname, "../..");
 const pkg =         JSON.parse(fs.readFileSync(path.join(projectRoot, "package.json"), "utf8"));
 
 const skipExe = process.env.SKIP_EXE === "true";
+
+// Clean dist folder
+const distDir = path.join(projectRoot, "dist");
+if (fs.existsSync(distDir)) {
+    console.log("Cleaning dist folder...");
+    fs.rmSync(distDir, { recursive: true, force: true });
+}
+fs.mkdirSync(distDir, { recursive: true });
 
 console.log("building");
 execSync(`npx esbuild src/index.ts --bundle --platform=node --target=node22 --outfile=dist/PureDango.cjs --format=cjs --define:PACKAGE_NAME='"${pkg.name}"' --define:PACKAGE_VERSION='"${pkg.version}"' --define:PACKAGE_DESCRIPTION='"${pkg.description}"'`, {stdio: "inherit"});
@@ -34,8 +43,6 @@ if (buildAll)
     console.log(`Building for all platforms: ${targetString}`);
     
     execSync(`npx @yao-pkg/pkg dist/PureDango.cjs --targets ${targetString}`, {stdio: "inherit"});
-    
-    const distDir = path.join(projectRoot, "dist");
     
     if (fs.existsSync(path.join(distDir, "PureDango-macos-x64")))
         fs.renameSync(path.join(distDir, "PureDango-macos-x64"), path.join(distDir, "PureDangoLauncher-macos"));
@@ -95,9 +102,29 @@ console.log("Fixing line endings for shell scripts...");
 const shellScript = path.join(projectRoot, "bin/pure-dango.sh");
 if (fs.existsSync(shellScript)) 
 {
-    let content = fs.readFileSync(shellScript, 'utf8');
-    content = content.replace(/\r\n/g, '\n');
-    fs.writeFileSync(shellScript, content, 'utf8');
+    let content = fs.readFileSync(shellScript, "utf8");
+    content = content.replace(/\r\n/g, "\n");
+    fs.writeFileSync(shellScript, content, "utf8");
 }
 
+console.log("Creating source archive...");
+const zipPath = path.join(projectRoot, `${pkg.name}-${pkg.version}-source.zip`);
+const output = fs.createWriteStream(zipPath);
+const archive = archiver("zip", {zlib: {level: 9}});
+
+archive.pipe(output);
+
+archive.glob("**/*", {
+    cwd: projectRoot,
+    ignore: ["node_modules/**", "dist/**", ".git/**", "*.zip", "package-lock.json"]
+});
+
+await archive.finalize();
+
+await new Promise((resolve, reject) => {
+    output.on("close", resolve);
+    archive.on("error", reject);
+});
+
+console.log(`Source archive created: ${zipPath} (${(archive.pointer() / 1024 / 1024).toFixed(2)} MB)`);
 console.log("Build complete!");

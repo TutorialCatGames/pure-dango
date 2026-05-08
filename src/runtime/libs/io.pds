@@ -302,11 +302,11 @@ class f
         return String.slice(this.__INIT__, start, length);
     }
 
-    dread(default)
+    dread(fallback)
     {
         if (fe(this.__INIT__))
             return rf(this.__INIT__);
-        return default;
+        return fallback;
     }
 
     writeIfChanged(content)

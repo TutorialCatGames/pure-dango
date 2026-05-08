@@ -839,6 +839,57 @@ const typeMap : TypeMap = new Map([
         }
     ],
 
+    ["SwitchStatement", 
+        (node : any, bytecode : Bytecode) : void =>
+        {
+            bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
+
+            parseObject(node.discriminant, bytecode, true);
+            const temp = `__switch_temp_${tempCounter++}`;
+            bytecode.push(operators.ALLOC, temp);
+            bytecode.push(operators.STORE, temp);
+
+            const endJumps : number[] = [];
+
+            for (let i = 0; i < node.cases.length; i++)
+            {
+                const switchCase = node.cases[i];
+
+                bytecode.push(operators.LOAD, temp);
+                parseObject(switchCase.test, bytecode, true);
+                bytecode.push(operators.EQ);
+
+                const nextCaseJump = bytecode.length;
+                bytecode.push(operators.JZ, 0);
+
+                // execute consequent
+                bytecode.push(operators.PUSHSCP);
+                switchCase.consequent.forEach((statement : any) => parseObject(statement, bytecode));
+                bytecode.push(operators.POPSCP);
+
+                const endJump = bytecode.length;
+                bytecode.push(operators.JMP, 0);
+                endJumps.push(endJump);
+
+                // set next case position
+                bytecode[nextCaseJump + 1] = bytecode.length;
+            }
+
+            if (node.defaultCase)
+            {
+                bytecode.push(operators.PUSHSCP);
+                node.defaultCase.consequent.forEach((statement : any) => parseObject(statement, bytecode));
+                bytecode.push(operators.POPSCP);
+            }
+
+            // set all end jumps to point here
+            const endPosition = bytecode.length;
+            endJumps.forEach(position => {
+                bytecode[position + 1] = endPosition;
+            });
+        }
+    ],
+
     ["ReturnStatement",
         (node : any, bytecode : Bytecode) : void =>
         {

@@ -49,6 +49,10 @@ type ParserToken =
     catchBlock?: ParserToken[],
     finallyBlock?: ParserToken[] | null,
 
+    discriminant?: ParserToken | null,
+    cases?: any[],
+    defaultCase?: any,
+
     errorVariable?: string,
 
     elements? : ParserToken[],

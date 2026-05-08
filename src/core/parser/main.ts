@@ -558,6 +558,7 @@ export function parseStatement(ast : AST, tokens : Tokens, state : State) : true
         else if (handlers.importHandler(ast, token, tokens, state))      return true;
         else if (handlers.classHandler(ast, token, tokens, state))       return true;
         else if (handlers.tryHandler(ast, token, tokens, state))         return true;
+        else if (handlers.switchHandler(ast, token, tokens, state))      return true;
     }
 
     const expression = parseExpression(tokens, 0, state)!;

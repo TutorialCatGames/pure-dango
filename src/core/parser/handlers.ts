@@ -706,3 +706,136 @@ export function tryHandler(ast : AST, token : BaseToken, tokens : Tokens, state 
     ast.body.push(node);
     return true;
 }
+
+export function switchHandler(ast : AST, token : BaseToken, tokens : Tokens, state : State) : boolean
+{
+    if (!token || token.type !== "Keyword" || token.value !== "switch")
+        return false;
+
+    const {row, column} = next(tokens, state)!;
+
+    // parse the expression to match
+    if (!peek(tokens, state) || peek(tokens, state).value !== "(")
+        throw new parseErrors.MissingTokenError("(", row, column);
+    next(tokens, state); // eat (
+
+    const discriminant = parseExpression(tokens, 0, state, true);
+    if (!discriminant)
+        errorTemplate("switchHandler", `Expected expression after "switch" at line ${row}:${column}`);
+
+    if (!peek(tokens, state) || peek(tokens, state).value !== ")")
+        throw new parseErrors.MissingTokenError(")", row, column);
+    next(tokens, state); // eat )
+
+    // parse the opening brace
+    if (!peek(tokens, state) || peek(tokens, state).value !== "{")
+        throw new parseErrors.MissingTokenError("{", row, column);
+    next(tokens, state); // eat {
+
+    // parse cases
+    const cases : any[] = [];
+    let defaultCase : any = null;
+
+    while (peek(tokens, state) && peek(tokens, state).value !== "}")
+    {
+        while (peek(tokens, state)?.type === "Separator")
+            next(tokens, state);
+
+        const caseToken = peek(tokens, state);
+        if (!caseToken || caseToken.type !== "Keyword")
+            break;
+
+        if (caseToken.value === "case")
+        {
+            next(tokens, state); // eat case
+            const test = parseExpression(tokens, 0, state, true);
+            if (!test)
+                errorTemplate("switchHandler", `Expected expression after "case" at line ${caseToken.row}:${caseToken.column}`);
+
+            if (!peek(tokens, state) || peek(tokens, state).value !== ":")
+                throw new parseErrors.MissingTokenError(":", caseToken.row, caseToken.column);
+            next(tokens, state); // eat :
+
+            // parse consequent statements until next case, default, or }
+            const consequent : ParserToken[] = [];
+            while (peek(tokens, state))
+            {
+                while (peek(tokens, state)?.type === "Separator")
+                    next(tokens, state);
+
+                const nextToken = peek(tokens, state);
+                if (!nextToken || nextToken.value === "}" || 
+                    (nextToken.type === "Keyword" && (nextToken.value === "case" || nextToken.value === "default")))
+                    break;
+
+                const temporaryAST : AST = {type: "Program", body: []};
+                parseStatement(temporaryAST, tokens, state);
+                consequent.push(...temporaryAST.body);
+            }
+
+            cases.push(
+                {
+                    type: "SwitchCase",
+                    test,
+                    consequent,
+                    row: caseToken.row,
+                    column: caseToken.column
+                }
+            );
+        }
+        else if (caseToken.value === "default")
+        {
+            next(tokens, state); // eat default
+
+            if (!peek(tokens, state) || peek(tokens, state).value !== ":")
+                throw new parseErrors.MissingTokenError(":", caseToken.row, caseToken.column);
+            next(tokens, state); // eat :
+
+            // parse consequent statements until next case or }
+            const consequent : ParserToken[] = [];
+            while (peek(tokens, state))
+            {
+                while (peek(tokens, state)?.type === "Separator")
+                    next(tokens, state);
+
+                const nextToken = peek(tokens, state);
+                if (!nextToken || nextToken.value === "}" || 
+                    (nextToken.type === "Keyword" && nextToken.value === "case"))
+                    break;
+
+                const temporaryAST : AST = {type: "Program", body: []};
+                parseStatement(temporaryAST, tokens, state);
+                consequent.push(...temporaryAST.body);
+            }
+
+            defaultCase = 
+            {
+                type: "SwitchCase",
+                test: null,
+                consequent,
+                row: caseToken.row,
+                column: caseToken.column
+            };
+        }
+        else
+            break;
+    }
+
+    // parse closing brace
+    if (!peek(tokens, state) || peek(tokens, state).value !== "}")
+        throw new parseErrors.MissingTokenError("}", row, column);
+    next(tokens, state); // eat }
+
+    const node : ParserToken = 
+    {
+        type: "SwitchStatement",
+        discriminant,
+        cases,
+        defaultCase,
+        row,
+        column
+    };
+
+    ast.body.push(node);
+    return true;
+}

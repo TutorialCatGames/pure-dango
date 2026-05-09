@@ -53,6 +53,8 @@ type ParserToken =
     cases?: any[],
     defaultCase?: any,
 
+    isDeclaration?: boolean,
+
     errorVariable?: string,
 
     elements? : ParserToken[],

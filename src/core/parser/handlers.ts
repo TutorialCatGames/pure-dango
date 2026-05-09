@@ -257,12 +257,71 @@ export function forHandler(ast : AST, token : BaseToken, tokens : Tokens, state 
     if (!token || token.type !== "Keyword" || token.value !== "for")
         return false;
 
-    const{row, column}  = next(tokens, state)!; // delete for
+    const {row, column}  = next(tokens, state)!; // delete for
 
     if (!peek(tokens, state) || peek(tokens, state).value !== "(")
         throw new parseErrors.MissingTokenError("(", row, column);
+
+    const savedPosition = state.position;
     next(tokens, state);
 
+    let variableToken = peek(tokens, state);
+    let isDeclaration = false;
+    let variableName : string | null = null;
+
+    if (variableToken?.value === "new")
+    {
+        isDeclaration = true;
+        next(tokens, state);
+        variableToken = peek(tokens, state);
+    }
+
+    if (variableToken?.type === "Identifier")
+    {
+        variableName = variableToken.value;
+        next(tokens, state); // consume the identifier
+
+        const nextToken = peek(tokens, state);
+
+        // check for "in" or "of" keywords
+        if (nextToken?.type === "Keyword" && (nextToken.value === "in" || nextToken.value === "of"))
+        {
+            const loopType = nextToken.value;
+            next(tokens, state); // consume in or of
+
+            const iterable = parseExpression(tokens, 0, state)!;
+
+            if (!peek(tokens, state) || peek(tokens, state).value !== ")")
+                throw new parseErrors.MissingTokenError(")", row, column);
+            next(tokens, state);
+
+            // parse the body
+            let body : ParserToken[];
+            const openingBracket = peek(tokens, state);
+            if (openingBracket && openingBracket.value === "{")
+                body = parseBlock(tokens, state);
+            else
+                body = parseNextToken(tokens, state);
+            
+            const node : ParserToken = 
+            {
+                type  : loopType === "in" ? "ForInStatement" : "ForOfStatement",
+                left  : variableName,
+                right : iterable,
+                body,
+                isDeclaration,
+                row,
+                column
+            }
+
+            ast.body.push(node);
+            return true;
+        }
+    }
+
+    state.position = savedPosition;
+    next(tokens, state); // re-consume the (
+    
     // parse initializer as a temporary AST
     const temporaryAST : AST =
     {

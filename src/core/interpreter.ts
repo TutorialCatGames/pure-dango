@@ -1472,6 +1472,25 @@ const commands : Array<Function | undefined> =
                 throw pendingError;
         }
     },   // ENDTRY
+
+    () : void =>
+    {
+        const obj : any = stack.pop();
+        if (obj?.type === "object")
+            stack.push(Object.keys(obj.value));
+        else if (Array.isArray(obj))
+            stack.push(obj.map((_ : any, i : number) => String(i)));
+        else
+            errorTemplate("OBJKEYS", `expected an Object or Array, got "${obj}"`);
+    },   // OBJKEYS
+
+    () : void =>
+    {
+        const arr : any = stack.pop();
+        if (!Array.isArray(arr))
+            errorTemplate("ARRLEN", `expected an Array, got "${arr}"`);
+        stack.push(arr.length);
+    },   // ARRLEN
 ];
 
 const asyncOpcodes = new Set([5, 10, 13, 26, 35, 37]);

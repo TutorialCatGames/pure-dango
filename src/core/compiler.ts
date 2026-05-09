@@ -135,7 +135,9 @@ const operators : Record<string, number> = Object.freeze({
     SPREAD:     36,   // spreaded arguments
     CALLMETHOD: 37,   
     TRY:        38,   // start try block
-    ENDTRY:     39    // end try-catch
+    ENDTRY:     39,   // end try-catch
+    OBJKEYS:    40,   // pops object, pushes Object.keys() as plain array
+    ARRLEN:     41    // pops array, pushes its .length
 })
 
 const binaryOperators : Record<string, number> = Object.freeze({
@@ -577,6 +579,196 @@ const typeMap : TypeMap = new Map([
             ]
             
             for (const {position, target} of positions) bytecode[position + 1] = target;
+            
+            loopStack.pop();
+            bytecode.push(operators.POPSCP);
+        }
+    ],
+
+    ["ForInStatement",
+        (node : any, bytecode : Bytecode) : void =>
+        {
+            bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
+
+            bytecode.push(operators.PUSHSCP);
+            
+            // evaluate the object, extract its keys as a plain JS array
+            parseObject(node.right, bytecode, true);
+            bytecode.push(operators.OBJKEYS);
+            
+            // store the keys array
+            const keysVar = `__keys_${node.row}_${node.column}__`;
+            bytecode.push(operators.ALLOC, keysVar);
+            bytecode.push(operators.STORE, keysVar);
+            
+            // allocate and initialize counter
+            const counterVar = `__i_${node.row}_${node.column}__`;
+            bytecode.push(operators.ALLOC, counterVar);
+            bytecode.push(operators.PUSH, 0);
+            bytecode.push(operators.STORE, counterVar);
+            
+            // allocate the loop variable
+            bytecode.push(operators.ALLOC, node.left);
+            
+            const start : number = bytecode.length;
+            
+            const loopInfo : LoopInfo =
+            { 
+                start,
+                continueTarget: null,
+                end: null,
+                breakPositions: [],
+                continuePositions: []
+            };
+            loopStack.push(loopInfo);
+
+            // loop condition: counter < keys.length
+            bytecode.push(operators.LOAD, counterVar);
+            bytecode.push(operators.LOAD, keysVar);
+            bytecode.push(operators.ARRLEN);
+            bytecode.push(operators.LT);
+            
+            const jumpValueToEndPosition = bytecode.length;
+            bytecode.push(operators.JZ, 0);
+
+            bytecode.push(operators.PUSHSCP);
+            
+            // get current key: keys[counter]
+            bytecode.push(operators.LOAD, keysVar);
+            bytecode.push(operators.LOAD, counterVar);
+            bytecode.push(operators.ARRGET);
+            
+            // store in loop variable
+            bytecode.push(operators.STORE, node.left);
+            
+            // execute loop body
+            node.body.forEach((n : any) => parseObject(n, bytecode));
+            bytecode.push(operators.POPSCP);
+
+            loopInfo.continueTarget = bytecode.length;
+            
+            // increment counter
+            bytecode.push(operators.LOAD, counterVar);
+            bytecode.push(operators.PUSH, 1);
+            bytecode.push(operators.ADD);
+            bytecode.push(operators.STORE, counterVar);
+
+            bytecode.push(operators.JMP, start);
+            
+            const end : number = bytecode.length;
+            loopInfo.end = end;
+            
+            bytecode[jumpValueToEndPosition + 1] = end;
+
+            const positions : Array<{position : number, target : number | null}> =
+            [
+                ...loopInfo.breakPositions.map(position => ({
+                    position,
+                    target: end
+                })),
+
+                ...loopInfo.continuePositions.map(position => ({
+                    position,
+                    target: loopInfo.continueTarget
+                }))
+            ]
+            
+            for (const {position, target} of positions) bytecode[position + 1] = target;
+            
+            loopStack.pop();
+            bytecode.push(operators.POPSCP);
+        }
+    ],
+
+    ["ForOfStatement",
+        (node : any, bytecode : Bytecode) : void =>
+        {
+            bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
+            
+            // parse iterable (array)
+            bytecode.push(operators.PUSHSCP);
+            parseObject(node.right, bytecode, true);
+            
+            // alloc and store the array in a temporary variable
+            const arrayVariable = `__array_${node.row}_${node.column}_`;
+            bytecode.push(operators.ALLOC, arrayVariable);
+            bytecode.push(operators.STORE, arrayVariable);
+
+            // alloc and initialize counter
+            const counterVariable = `__i_${node.row}_${node.column}__`;
+            bytecode.push(operators.ALLOC, counterVariable);
+            bytecode.push(operators.PUSH, 0);
+            bytecode.push(operators.STORE, counterVariable);
+
+            // alloc the loop variable
+            bytecode.push(operators.ALLOC, node.left);
+
+            const start : number = bytecode.length;
+
+            const loopInfo : LoopInfo =
+            {
+                start,
+                end : null,
+
+                continueTarget : null,
+
+                breakPositions    : [],
+                continuePositions : []
+            }
+            loopStack.push(loopInfo);
+
+            bytecode.push(operators.LOAD, counterVariable);
+            bytecode.push(operators.LOAD, arrayVariable);
+            bytecode.push(operators.ARRLEN);
+            bytecode.push(operators.LT);
+
+            const jumpValueToEndPosition = bytecode.length;
+            bytecode.push(operators.JZ, 0);
+
+            bytecode.push(operators.PUSHSCP);
+
+            // get current value (array[counter])
+            bytecode.push(operators.LOAD, arrayVariable);
+            bytecode.push(operators.LOAD, counterVariable);
+            bytecode.push(operators.ARRGET);
+
+            // store in loop variable
+            bytecode.push(operators.STORE, node.left);
+
+            // execute loop body
+            node.body.forEach((n : any) => parseObject(n, bytecode));
+            bytecode.push(operators.POPSCP);
+
+            loopInfo.continueTarget = bytecode.length;
+            
+            // increment counter
+            bytecode.push(operators.LOAD, counterVariable);
+            bytecode.push(operators.PUSH, 1);
+            bytecode.push(operators.ADD);
+            bytecode.push(operators.STORE, counterVariable);
+
+            bytecode.push(operators.JMP, start);
+            
+            const end : number = bytecode.length;
+            loopInfo.end = end;
+            
+            bytecode[jumpValueToEndPosition + 1] = end;
+
+            const positions : Array<{position : number, target : number | null}> =
+            [
+                ...loopInfo.breakPositions.map(position => ({
+                    position,
+                    target: end
+                })),
+
+                ...loopInfo.continuePositions.map(position => ({
+                    position,
+                    target: loopInfo.continueTarget
+                }))
+            ]
+            
+            for (const {position, target} of positions) 
+                bytecode[position + 1] = target;
             
             loopStack.pop();
             bytecode.push(operators.POPSCP);

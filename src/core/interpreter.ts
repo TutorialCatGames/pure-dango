@@ -6,7 +6,7 @@ import {parser}         from "./parser/main";
 import {buildBytecode}  from "./compiler";
 import {tokenizer}      from "./tokenizer/tokenizer";
 
-import {isConstant}    from "../runtime/globals";
+import {constants, isConstant}    from "../runtime/globals";
 import {runtimeErrors} from "../runtime/errors";
 
 import {syncFunctions, asyncFunctions, errorTemplate} from "../runtime/stdlib";
@@ -562,6 +562,9 @@ const commands : Array<Function | undefined> =
     {
         const name  : any = next(bytecode);
         const value : any = stack.pop();
+
+        if (constants[name])
+            errorTemplate("STORE", `cannot reassign constant "${name}"`);
         
         const slot  : any = currentScope.slotMap.get(name);
         if (slot !== undefined) 
@@ -1491,6 +1494,16 @@ const commands : Array<Function | undefined> =
             errorTemplate("ARRLEN", `expected an Array, got "${arr}"`);
         stack.push(arr.length);
     },   // ARRLEN
+
+    (bytecode : Bytecode) : void =>
+    {
+        const name : string = (next(bytecode)) as string;
+        const value = stack.pop();
+        
+        declareVariable(name);
+        setVariable(name, value);
+        constants[name] = true;
+    },   // ALLOCCONST
 ];
 
 const asyncOpcodes = new Set([5, 10, 13, 26, 35, 37]);

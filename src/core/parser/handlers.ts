@@ -48,21 +48,33 @@ export function parseInstantationExpression(token : BaseToken, tokens : Tokens, 
 
 export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, state : State) : boolean
 {
-    if (!token || token.type !== "Keyword" || token.value !== "new")
+    if (!token || token.type !== "Keyword" || (token.value !== "new" && token.value !== "const"))
         return false;
 
     const {row, column} = next(tokens, state)!;
 
-    // collect variable names
-    const names : string[] = [];
+    const isConstant = token.value === "const";
+
+    // parse declarations
+    const declarations : Array<{name: string, value: ParserToken | null}> = [];
     do
     {
         const nextToken = peek(tokens, state);
-        if (nextToken && nextToken.type !== "Identifier")
-            errorTemplate("variableHandler", `expected a variable after keyword "new" at line ${row}:${column}`);
+        if (!nextToken || nextToken.type !== "Identifier")
+            errorTemplate("variableHandler", `expected a variable after keyword "${token.value}" at line ${row}:${column}`);
 
-        const {value : identifierValue} = next(tokens, state)!;
-        names.push(identifierValue);
+        const {value : name} = next(tokens, state)!;
+        let value : ParserToken | null = null;
+        
+        if (peek(tokens, state)?.value === "=")
+        {
+            next(tokens, state); // eat =
+            value = parseExpression(tokens, 0, state)!;
+        }
+        else if (isConstant)
+            errorTemplate("variableHandler", `const "${name}" must be initialized at line ${row}:${column}`);
+
+        declarations.push({name, value});
 
         if (peek(tokens, state)?.value === ",")
             next(tokens, state);
@@ -70,34 +82,11 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
             break;
     } while (true);
 
-    // collect variable values
-    const values : ParserToken[] = [];
-    if (peek(tokens, state)?.value === "=")
+    // create nodes
+    for (const {name, value} of declarations) 
     {
-        next(tokens, state);   // eat =
-
-        do
-        {
-            values.push(parseExpression(tokens, 0, state)!);
-            if (peek(tokens, state)?.value === ",")
-                next(tokens, state);
-            else
-                break;
-        } while (true);
-    }
-
-    // merge names and values
-    for (let i = 0; i < names.length; i++)
-    {
-        const value = i < values.length 
-            ? values[i] 
-            : null;
-
-        const type = value
-            ? "NewAssignment"
-            : "NewDeclaration"
-
-        ast.body.push({type, name: names[i], value, row, column});
+        const type = value ? "NewAssignment" : "NewDeclaration";
+        ast.body.push({type, name, value, row, column, constant : isConstant});
     }
 
     return true;

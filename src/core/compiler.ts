@@ -137,7 +137,8 @@ const operators : Record<string, number> = Object.freeze({
     TRY:        38,   // start try block
     ENDTRY:     39,   // end try-catch
     OBJKEYS:    40,   // pops object, pushes Object.keys() as plain array
-    ARRLEN:     41    // pops array, pushes its .length
+    ARRLEN:     41,   // pops array, pushes its .length
+    ALLOCCONST: 42,   // allocates a variable as a constant
 })
 
 const binaryOperators : Record<string, number> = Object.freeze({
@@ -373,9 +374,19 @@ const typeMap : TypeMap = new Map([
         {
             bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
 
-            bytecode.push(operators.ALLOC, node.name);
-            if (node.value !== null) parseObject(node.value, bytecode, true);
-            bytecode.push(operators.STORE, node.name);
+            if (node.constant)
+            {
+                parseObject(node.value, bytecode, true);
+                bytecode.push(operators.ALLOCCONST, node.name);
+            }
+            else
+            {
+                bytecode.push(operators.ALLOC, node.name);
+                if (node.value !== null) 
+                    parseObject(node.value, bytecode, true);
+
+                bytecode.push(operators.STORE, node.name);
+            }
         }
     ],
 
@@ -388,7 +399,8 @@ const typeMap : TypeMap = new Map([
             if (typeof node.name === "string") 
             {
                 bytecode.push(operators.STORE, node.name);
-                if (keepValue) bytecode.push(operators.LOAD, node.name);
+                if (keepValue) 
+                    bytecode.push(operators.LOAD, node.name);
             }
             else if (node.name.type === "MemberExpression")
             {

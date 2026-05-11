@@ -1,4 +1,5 @@
 import fs from "fs";
+import util from "util";
 import path from "path";
 import readline from "readline";
 import {performance} from "perf_hooks";
@@ -108,17 +109,25 @@ export const syncFunctions =
 
     "out": (stack: Stack, getTrueValue: Function, ...args: any[]) : void =>
     {
-        const map     : string[] = args.map(string => isGFloat(string) ? string.inner.toString() : string);
-        const joined  : string   = joinStrings(map);
-        const escaped : string   = interpretEscapeCharacters(joined);
+        const map = args.map(item => isGFloat(item)
+            ? util.inspect(item.inner.toFixed(), { colors: true })
+            : util.inspect(item, { colors: true })
+        );
+
+        const joined  : string = joinStrings(map);
+        const escaped : string = interpretEscapeCharacters(joined);
         process.stdout.write(escaped);
     },
 
     "print" : (stack: Stack, getTrueValue: Function, ...args: any[]) : void =>
     {
-        const map     : string[] = args.map(string => isGFloat(string) ? string.inner.toString() : string);
-        const joined  : string   = joinStrings(map);
-        const escaped : string   = interpretEscapeCharacters(joined);
+        const map = args.map(item => isGFloat(item)
+            ? util.inspect(item.inner.toFixed(), { colors: true })
+            : util.inspect(item, { colors: true })
+        );
+
+        const joined  : string = joinStrings(map);
+        const escaped : string = interpretEscapeCharacters(joined);
         console.log(escaped);
     },
 
@@ -828,9 +837,13 @@ export const syncFunctions =
 
     "regularerror": (stack: Stack, getTrueValue: Function, ...args: any[]) : void =>
     {
-        const map     : string[] = args.map(string => isGFloat(string) ? string.inner.toString() : string);
-        const joined  : string   = joinStrings(map);
-        const escaped : string   = interpretEscapeCharacters(joined);
+        const map = args.map(item => isGFloat(item)
+            ? util.formatWithOptions(item.inner.toFixed(), {colors: true})
+            : util.inspect(item, {colors: true})
+        );
+
+        const joined  : string = joinStrings(map);
+        const escaped : string = interpretEscapeCharacters(joined);
         console.error(`\x1B[1m\x1B[31m${escaped}\x1B[0m`);
     },
 

@@ -1177,18 +1177,25 @@ class String extends BaseArray
         return typeof(this.__INIT__) == "string";
 }
 
-class Float
+class Number
 {
     constructor(x)
-        this.__INIT__ = tofloat(x);
+        this.__INIT__ = x;
 
     toString()
-    {
         return tostr(this.__INIT__);
-    }
     
     toBigInt()
         return tobigint(this.__INIT__);
+    
+    valueOf()
+        return this.__INIT__;
+}
+
+class Float extends Number
+{
+    constructor(x)
+        super(tofloat(x));
     
     abs()
     {
@@ -1197,28 +1204,39 @@ class Float
             return inst Float(-val);
         return inst Float(val);
     }
-    
-    valueOf()
-        return this.__INIT__;
 }
 
-Float.isFloat = function(x) {
-    if (typeof(x) == "float")
-        return true;
-    if (typeof(x) == "object" && x.__INIT__ != undefined)
-        return typeof(x.__INIT__) == "float";
-    return false;
+class BigInt extends Number
+{
+    constructor(x)
+        super(tobigint(x));
+
+    abs()
+    {
+        new val = this.__INIT__;
+        if (val < 0)
+            return inst BigInt(-val);
+        return inst BigInt(val);
+    }
 }
 
-Float.toBigInt = function(x) {
-    if (typeof(x) == "float")
-        return tobigint(x);
-    return tobigint(x.__INIT__);
-}
+const unwrap = function(x) return typeof(x) == "object" ? x.__INIT__ : x;
+Float.isFloat   = function(x) return typeof(unwrap(x)) == "float";
+Float.toFloat   = function(x) return tofloat(unwrap(x));
+Float.toBigInt  = function(x) return tobigint(unwrap(x));
+Float.toString  = function(x) return tostr(unwrap(x));
 
-Float.toString = function(x) {
-    if (typeof(x) == "float")
-        return tostr(x);
+BigInt.isBigInt = function(x) return typeof(unwrap(x)) == "bigint";
+BigInt.toFloat  = function(x) return tofloat(unwrap(x));
+BigInt.toBigInt = function(x) return tobigint(unwrap(x));
+BigInt.toString = function(x) return tostr(unwrap(x));
 
-    return tostr(x.__INIT__);
-}
+print(Float.isFloat(12.1));
+print(Float.toFloat(12.1));
+print(Float.toBigInt(12.1));
+print(Float.toString(12.1));
+
+print(BigInt.isBigInt(12.1));
+print(BigInt.toFloat(12.1));
+print(BigInt.toBigInt(12.1));
+print(BigInt.toString(12.1));

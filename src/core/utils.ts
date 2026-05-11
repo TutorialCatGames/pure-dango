@@ -193,9 +193,9 @@ export const bigIntPow = (base: bigint, exponent: bigint) : bigint | any =>
     let result = 1n;
     while (exponent > 0n)
     {
-        if ((exponent & 1n) === 1n) result *= base;   // use exponentiation by squaring. "(exponent & 1) === 1n" checks if the exponent is an odd number
+        if ((exponent & 1n) === 1n) result *= base; // use exponentiation by squaring. "(exponent & 1) === 1n" checks if the exponent is an odd number
         base *= base;
-        exponent >>= 1n;                              // integer division operator
+        exponent >>= 1n; // integer division operator
     }
     
     return result;
@@ -274,7 +274,7 @@ export const format = (item: any) : string | null =>
     if (typeof item === "object")            
         return generateOrigin(item.ast);
 
-    return item.toString();
+    return item;
 }
 
 // FON (FormatObjectNotation) is a version of format designed for console.dir()

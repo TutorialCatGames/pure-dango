@@ -55,26 +55,15 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
 
     const isConstant = token.value === "const";
 
-    // parse declarations
-    const declarations : Array<{name: string, value: ParserToken | null}> = [];
+    // collect all names
+    const names : string[] = [];
     do
     {
         const nextToken = peek(tokens, state);
         if (!nextToken || nextToken.type !== "Identifier")
             errorTemplate("variableHandler", `expected a variable after keyword "${token.value}" at line ${row}:${column}`);
 
-        const {value : name} = next(tokens, state)!;
-        let value : ParserToken | null = null;
-        
-        if (peek(tokens, state)?.value === "=")
-        {
-            next(tokens, state); // eat =
-            value = parseExpression(tokens, 0, state)!;
-        }
-        else if (isConstant)
-            errorTemplate("variableHandler", `const "${name}" must be initialized at line ${row}:${column}`);
-
-        declarations.push({name, value});
+        names.push(next(tokens, state)!.value);
 
         if (peek(tokens, state)?.value === ",")
             next(tokens, state);
@@ -82,10 +71,31 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
             break;
     } while (true);
 
-    // create nodes
-    for (const {name, value} of declarations) 
+    // collect values if = is here
+    const values : (ParserToken | null)[] = [];
+    if (peek(tokens, state)?.value === "=")
     {
-        const type = value ? "NewAssignment" : "NewDeclaration";
+        next(tokens, state); // eat =
+        do
+        {
+            const value = parseExpression(tokens, 0, state, true)!;
+            values.push(value);
+
+            if (peek(tokens, state)?.value === ",")
+                next(tokens, state);
+            else
+                break;
+        } while (true);
+    }
+    else if (isConstant)
+        errorTemplate("variableHandler", `const must be initialized at line ${row}:${column}`);
+
+    // create nodes
+    for (let i = 0; i < names.length; i++)
+    {
+        const name  = names[i];
+        const value = values[i] ?? null;
+        const type  = value ? "NewAssignment" : "NewDeclaration";
         ast.body.push({type, name, value, row, column, constant : isConstant});
     }
 

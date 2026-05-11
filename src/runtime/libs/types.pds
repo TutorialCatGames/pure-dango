@@ -1230,13 +1230,3 @@ BigInt.isBigInt = function(x) return typeof(unwrap(x)) == "bigint";
 BigInt.toFloat  = function(x) return tofloat(unwrap(x));
 BigInt.toBigInt = function(x) return tobigint(unwrap(x));
 BigInt.toString = function(x) return tostr(unwrap(x));
-
-print(Float.isFloat(12.1));
-print(Float.toFloat(12.1));
-print(Float.toBigInt(12.1));
-print(Float.toString(12.1));
-
-print(BigInt.isBigInt(12.1));
-print(BigInt.toFloat(12.1));
-print(BigInt.toBigInt(12.1));
-print(BigInt.toString(12.1));

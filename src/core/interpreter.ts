@@ -941,7 +941,7 @@ const commands : Array<Function | undefined> =
 
         fileContent = fs.readFileSync(absolutePath, "utf8");
 
-        if (!fileContent)
+        if (!fileContent?.trim())
         {
             console.warn(`Warning: imported file "${absolutePath}" is empty`);
             return;
@@ -1777,6 +1777,9 @@ export async function interpret(
 
 export async function executeInCurrentContext(code : string, isolateScope : boolean = false) : Promise<any>
 {
+    if (!code?.trim())
+        return undefined;
+    
     const tokens = tokenizer(code);
     const ast = parser(tokens);
     const execBytecode = buildBytecode(ast, "<exec>");

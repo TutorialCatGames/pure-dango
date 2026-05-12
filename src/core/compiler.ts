@@ -390,6 +390,78 @@ const typeMap : TypeMap = new Map([
         }
     ],
 
+    ["ArrayDestructure", 
+        (node : any, bytecode : Bytecode) : void =>
+        {
+            bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
+
+            parseObject(node.value, bytecode, true);
+
+            // store in a hidden temp so we can reload per element
+            const temp = `__destructure_tmp_${tempCounter++}__`;
+            bytecode.push(operators.ALLOC, temp);
+            bytecode.push(operators.STORE, temp);
+
+            // alloc all target variables first (for non-const)
+            for (const name of node.names)
+            {
+                if (!node.constant)
+                    bytecode.push(operators.ALLOC, name);
+            }
+
+            for (let i = 0; i < node.names.length; i++)
+            {
+                const name = node.names[i];
+                bytecode.push(operators.LOAD, temp);
+                bytecode.push(operators.PUSH, String(i));
+                bytecode.push(operators.ARRGET);
+
+                if (node.constant)
+                    bytecode.push(operators.ALLOCCONST, name);
+                else
+                    bytecode.push(operators.STORE, name)
+            }
+
+            // clear temp to avoid stray BigInt in scope at the end of the program
+            bytecode.push(operators.PUSH, null);
+            bytecode.push(operators.STORE, temp);
+        }
+    ],
+
+    ["ObjectDestructure",
+        (node : any, bytecode : Bytecode) : void =>
+        {
+            bytecode.push(operators.SETLINE, node.row ?? 0, node.column ?? 0);
+
+            parseObject(node.value, bytecode, true);
+
+            const temp = `__destructure_tmp_${tempCounter++}__`;
+            bytecode.push(operators.ALLOC, temp);
+            bytecode.push(operators.STORE, temp);
+
+            for (const name of node.names)
+            {
+                if (!node.constant)
+                    bytecode.push(operators.ALLOC, name);
+            }
+
+            for (const name of node.names)
+            {
+                bytecode.push(operators.LOAD, temp);
+                bytecode.push(operators.PUSH, name); // string key
+                bytecode.push(operators.ARRGET);     // object[key]
+
+                if (node.constant)
+                    bytecode.push(operators.ALLOCCONST, name);
+                else
+                    bytecode.push(operators.STORE, name);
+            }
+
+            bytecode.push(operators.PUSH, null);
+            bytecode.push(operators.STORE, temp);
+        }
+    ],
+
     ["Assignment", 
         (node : any, bytecode : Bytecode, keepValue : boolean) : void =>
         {

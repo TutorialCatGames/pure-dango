@@ -51,6 +51,8 @@ type ParserToken =
     catchBlock?: ParserToken[],
     finallyBlock?: ParserToken[] | null,
 
+    names?: string[],
+
     discriminant?: ParserToken | null,
     cases?: any[],
     defaultCase?: any,

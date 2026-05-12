@@ -55,9 +55,7 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
 
     const isConstant = token.value === "const";
 
-    // collect all names
-    const names : string[] = [];
-    do
+    const gatherNames = function(names : Array<string>, breakOnNoComma? : boolean) : boolean
     {
         const nextToken = peek(tokens, state);
         if (!nextToken || nextToken.type !== "Identifier")
@@ -67,7 +65,92 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
 
         if (peek(tokens, state)?.value === ",")
             next(tokens, state);
-        else
+        else if (breakOnNoComma)
+            return true;
+
+        return false;
+    }
+
+    // array destructuring like uhh new [a, b] = expression()
+    if (peek(tokens, state)?.value === "[")
+    {
+        next(tokens, state); // eat [
+
+        const names : string[] = [];
+        while (peek(tokens, state) && peek(tokens, state).value !== "]")
+            gatherNames(names);
+
+        if (!peek(tokens, state) || peek(tokens, state).value !== "]")
+            errorTemplate("variableHandler", `expected "]" to close array destructure at line ${row}:${column}`);
+        next(tokens, state); // eat ]
+
+        if (!peek(tokens, state) || peek(tokens, state).value !== "=")
+            errorTemplate("variableHandler", `inner array destructure must be followed by "=" at line ${row}:${column}`);
+        next(tokens, state); // eat =
+
+        const value = parseExpression(tokens, 0, state, true);
+        ast.body.push({type : "ArrayDestructure", names, value, row, column, constant : isConstant});
+
+        return true;
+    }
+
+    // object destructuring like new {a, b} = expr() or new {[a, b] = expr()}
+    if (peek(tokens, state)?.value === "{")
+    {
+        next(tokens, state); // eat {
+
+        // detect inner array destructure shorthand: {[a, b] = expr()}
+        if (peek(tokens, state)?.value === "[")
+        {
+            next(tokens, state); // eat [
+            
+            const names : string[] = [];
+            while (peek(tokens, state) && peek(tokens, state).value !== "]")
+                gatherNames(names);
+
+            if (!peek(tokens, state) || peek(tokens, state).value !== "]")
+                errorTemplate("variableHandler", `expected "]" to close inner array destructure at line ${row}:${column}`);
+            next(tokens, state); // eat ]
+
+            if (!peek(tokens, state) || peek(tokens, state).value !== "=")
+                errorTemplate("variableHandler", `inner array destructure must be followed by "=" at line ${row}:${column}`);
+            next(tokens, state); // eat =
+
+            const value = parseExpression(tokens, 0, state);
+            
+            if (!peek(tokens, state) || peek(tokens, state).value !== "}")
+                errorTemplate("variableHandler", `expected "}" to close object destructure at line ${row}:${column}`);
+            next(tokens, state); // eat }
+
+            ast.body.push({type : "ObjectDestructure", names, value, row, column, constant : isConstant});
+
+            return true;
+        }
+
+        // normal object destructure: new {a, b} = expr()
+        const names : string[] = [];
+        while (peek(tokens, state) && peek(tokens, state)?.value !== "}")
+            gatherNames(names);
+
+        if (!peek(tokens, state) || peek(tokens, state).value !== "}")
+            errorTemplate("variableHandler", `expected "}" to close object destructure at line ${row}:${column}`);
+        next(tokens, state); // eat }
+
+        if (!peek(tokens, state) || peek(tokens, state).value !== "=")
+            errorTemplate("variableHandler", `object destructure must be initialized with "=" at line ${row}:${column}`);
+        next(tokens, state); // eat =
+
+        const value = parseExpression(tokens, 0, state, true);
+        ast.body.push({type : "ObjectDestructure", names, value, row, column, constant : isConstant});
+
+        return true;
+    }
+
+    // collect all names
+    const names : string[] = [];
+    do
+    {
+        if (gatherNames(names, true))
             break;
     } while (true);
 

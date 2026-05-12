@@ -11,13 +11,26 @@ type RuntimeState =
 type Bytecode = Array<string | number>;
 type CacheFolder = string;
 
+export const formatParameter = (parameter : any) : string => 
+{
+    let result = parameter.rest ? 
+        `...${parameter.name}` 
+        : parameter.name;
+
+    if (parameter.default) 
+        result += ` = ${generateOrigin(parameter.default, 0)}`;
+
+    return result;
+}
+
 export const functionOrigin = (node : any, padding : string) : string =>
 {
     const indent = padding.length;
+    const parameters = node.parameters.map(formatParameter).join(", ");
     if (node.body.length === 0)
-        return `${padding}function ${node.name ? node.name : ""}(${node.parameters.join(", ")}) {}`;
+        return `${padding}function ${node.name ? node.name : ""}(${parameters}) {}`;
 
-    return `${padding}function ${node.name ? node.name : ""}(${node.parameters.join(", ")}) {\n` +
+    return `${padding}function ${node.name ? node.name : ""}(${parameters}) {\n` +
         `${node.body.map((child : any) => generateOrigin(child, indent + 4)).join("\n")}\n` +
     `${padding}}`;
 }
@@ -32,11 +45,15 @@ const origins : Record<string, Function> = Object.freeze({
     FunctionDeclaration : (node : any, padding : string) : string => functionOrigin(node, padding),
 
     Literal           : (node : any, padding : string) : string => `${padding}${node.value}`,
-    StringLiteral     : (node : any, padding : string) : string => 
+    StringLiteral: (node: any, padding: string): string => 
     {
-        const quote     : any = node.value[0];
-        const quoteWrap = quote === '"' || quote === "'" || quote === "`" ? quote : "";
-        return `${padding}${quoteWrap}${node.value}${quoteWrap}`;
+        const escaped = node.value
+            .replace(/\\/g, "\\\\")
+            .replace(/\n/g, "\\n")
+            .replace(/\t/g, "\\t")
+            .replace(/\r/g, "\\r")
+            .replace(/"/g, '\\"');
+        return `${padding}"${escaped}"`;
     },
     VariableReference : (node : any, padding : string) : string => `${padding}${node.value}`,
     
@@ -53,24 +70,47 @@ const origins : Record<string, Function> = Object.freeze({
 
     ClassDeclaration   : (node : any, padding : string) : string =>
     {
-        const methods    : string = node.methods
-            .map((method : any) =>
-            {
+        const methods: string = node.methods
+            .map((method: any) => {
                 const indent = padding.length + 4;
-                const pad    = " ".repeat(indent);
+                const pad = " ".repeat(indent);
+
+                const parameters = method.parameters.map(formatParameter).join(", "); // was node.parameters
 
                 if (method.body.length === 0)
-                    return `${pad}${method.name}(${method.parameters.join(", ")}) {}`;
+                    return `${pad}${method.name}(${parameters}) {}`;
 
-                return `${pad}${method.name}(${method.parameters.join(", ")}) {\n` +
-                        method.body.map((child : any) => generateOrigin(child, indent + 4)).join("\n") +
+                return `${pad}${method.name}(${parameters}) {\n` +
+                        method.body.map((child: any) => generateOrigin(child, indent + 4)).join("\n") +
                     `\n${pad}}`;
-            })   
+            })
             .join("\n\n");
 
-        return `${padding}${node.name} {\n` + 
-            `${methods}\n` + 
-            `${padding}}`;
+        const properties: string = (node.properties ?? [])
+            .slice(1)
+            .map((property: any) => {
+                const indent = padding.length + 4;
+                const pad = " ".repeat(indent);
+
+                if (property.value?.type === "FunctionExpression") 
+                {
+                    const parameters = property.value.parameters.map(formatParameter).join(", ");
+                    if (property.value.body.length === 0)
+                        return `${pad}${property.key}(${parameters}) {}`;
+
+                    return `${pad}${property.key}(${parameters}) {\n` +
+                            property.value.body.map((child: any) => generateOrigin(child, indent + 4)).join("\n") +
+                        `\n${pad}}`;
+                }
+
+                return `${pad}${property.key}: ${generateOrigin(property.value, 0)}`;
+            })
+            .join("\n\n");
+
+        return `${padding}${node.name} {\n` +
+            `${methods ? methods + "\n" : ""}` +
+            `${properties ? properties + "\n" : ""}` +
+        `${padding}}`;
     },
 
     MethodCall         : (node : any, padding : string) : string =>
@@ -132,23 +172,88 @@ const origins : Record<string, Function> = Object.freeze({
 
     TernaryExpression : (node : any, padding : string) : string => `${padding}${generateOrigin(node.condition, 0)} ? ${generateOrigin(node.then, 0)} : ${generateOrigin(node.else, 0)}`,
 
-    ForStatement: (node: any, padding: string): string => {
-        const indent : number = padding.length;
+    ForStatement      : (node : any, padding : string) : string => 
+    {
+        const indent = padding.length;
 
-        const initial   : string = generateOrigin(node.initial, 0)?.replace(/;$/, "") ?? "";
-        const condition : string = generateOrigin(node.condition, 0) ?? "";
-        const update    : string = generateOrigin(node.update, 0)?.replace(/;$/, "") ?? "";
+        const initial   = generateOrigin(node.initial, 0)?.replace(/;$/, "") ?? "";
+        const condition = generateOrigin(node.condition, 0) ?? "";
+        const update    = generateOrigin(node.update, 0)?.replace(/;$/, "") ?? "";
         return `${padding}for (${initial}; ${condition}; ${update}) {\n` +
-                node.body.map((child: any) => generateOrigin(child, indent + 4)).join("\n") +
+                node.body.map((child : any) => generateOrigin(child, indent + 4)).join("\n") +
             `\n${padding}}`
+    },
+
+    ForInStatement    : (node : any, padding : string) : string => 
+    {
+        const indent = padding.length;
+        return `${padding}for (${node.left} in ${generateOrigin(node.right, 0)}) {\n` +
+            node.body.map((child : any) => generateOrigin(child, indent + 4)).join("\n") +
+        `\n${padding}}`;
+    },
+
+    ForOfStatement    : (node : any, padding : string) : string => 
+    {
+        const indent = padding.length;
+        return `${padding}for (${node.left} of ${generateOrigin(node.right, 0)}) {\n` +
+            node.body.map((child : any) => generateOrigin(child, indent + 4)).join("\n") +
+        `\n${padding}}`;
     },
 
     WhileStatement    : (node : any, padding : string) : string =>
     {
-        const indent : number = padding.length;
+        const indent = padding.length;
         return `${padding}while (${generateOrigin(node.condition, 0)}) {\n` +
             node.body.map((child : any) => generateOrigin(child, indent + 4)).join("\n") +
         `\n${padding}}`
+    },
+
+    DoWhileStatement  : (node : any, padding : string) : string => 
+    {
+        const indent = padding.length;
+        return `${padding}do {\n` +
+            node.body.map((child : any) => generateOrigin(child, indent + 4)).join("\n") +
+        `\n${padding}} while (${generateOrigin(node.condition, 0)});`;
+    },
+
+    TryStatement      : (node : any, padding : string) : string => 
+    {
+        const indent = padding.length;
+
+        const tryBlock     = node.tryBlock.map((child : any) => generateOrigin(child, indent + 4)).join("\n");
+        const catchBlock   = node.catchBlock.map((child : any) => generateOrigin(child, indent + 4)).join("\n");
+        const finallyBlock = node.finallyBlock
+            ? `\n${padding}finally {\n` + 
+                   node.finallyBlock.map((child : any) => generateOrigin(child, indent + 4)).join("\n") + 
+              `\n${padding}}`
+            : "";
+
+        return `${padding}try {\n` + 
+                   `${tryBlock}\n` + 
+               `${padding}} catch (${node.errorVariable}) {` + 
+                   `\n${catchBlock}\n` + 
+               `${padding}}` + 
+               `${finallyBlock}`;
+    },
+
+    SwitchStatement   : (node : any, padding : string) : string => 
+    {
+        const indent = padding.length;
+        const pad    = " ".repeat(indent + 4);
+
+        const cases = node.cases.map((child : any) =>
+            `${pad}case ${generateOrigin(child.test, 0)}:\n` +
+                child.consequent.map((statement: any) => generateOrigin(statement, indent + 8)).join("\n")
+        ).join("\n");
+
+        const defaultCase = node.defaultCase
+            ? `\n${pad}default:\n` + 
+                  node.defaultCase.consequent.map((statement: any) => generateOrigin(statement, indent + 8)).join("\n")
+            : "";
+
+        return `${padding}switch (${generateOrigin(node.discriminant, 0)}) {` +
+                   `\n${cases}${defaultCase}\n` + 
+               `${padding}}`;
     },
 
     FunctionCall     : (node : any, padding : string) : string => `${padding}${node.name}(${node.args.map((argument : any) => generateOrigin(argument, 0)).join(", ")})`,
@@ -157,7 +262,7 @@ const origins : Record<string, Function> = Object.freeze({
     BreakStatement    : (node : any, padding : string) : string => `${padding}break;`,
     ContinueStatement : (node : any, padding : string) : string => `${padding}continue;`,
 
-    ImportStatement : (node : any, padding : string) : string => `${padding}import "${node.path}"`
+    ImportStatement : (node : any, padding : string) : string => `${padding}import "${node.path}";`
 });
 
 export const generateOrigin = (node : any, indent = 0) : string | null =>
@@ -209,7 +314,7 @@ export const typeHandler = (item: any) : string =>
             return format(item.properties["0"])!;
 
         const properties = Object.entries(item.properties ?? {})
-            .filter(([key, _]) => !((key as string).startsWith("__") && (key as string).endsWith("__")))
+            .filter(([key]) => key !== "0") // filter out __INIT__
             .map(([key, value]) => `    ${key}: ${format(value)}`)
             .join(",\n    ");
 
@@ -235,13 +340,22 @@ export const typeHandler = (item: any) : string =>
         case "class":
         {
             const methods = Object.values(item.methods ?? {})
-                .filter((method : any) => method.name !== "constructor")
-                .map((method : any) => `    ${method.name}(${method.parameters.map((parameter: any) => parameter.name).join(", ")})`)
+                .filter((method: any) => method.name !== "constructor")
+                .map((method: any) => `    ${method.name}(${method.parameters.map((p: any) => p.name).join(", ")})`)
                 .join("\n");
 
-                
+            const properties = Object.entries(item.properties ?? {})
+                .filter(([key]) => key !== "0")
+                .map(([key, value]: [string, any]) => {
+                    if (typeof value === "function" || value?.bytecode)
+                        return `    ${key}(${(value.parameters ?? []).map((p: any) => p.name).join(", ")})`;
+                    return `    ${key}: ${value}`;
+                })
+                .join("\n");
+
             return `${item.name ?? "unknown"} {\n` +
                 `${methods ? methods + "\n" : ""}` +
+                `${properties ? properties + "\n" : ""}` +
             `}`;
         }
 
@@ -254,7 +368,7 @@ export const typeHandler = (item: any) : string =>
 
 export const format = (item: any) : string | null =>
 {
-    if (item === null || item === undefined || item === "\n") 
+    if (item === null || item === undefined) 
         return item;
 
     if (isGFloat(item))             
@@ -270,9 +384,9 @@ export const format = (item: any) : string | null =>
 
     if (item.type)                           
         return typeHandler(item);
-    
+
     if (typeof item === "object")            
-        return generateOrigin(item.ast);
+        return generateOrigin(item.ast)?.replace(/\\/g, "\\\\")!;
 
     return item;
 }

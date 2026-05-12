@@ -188,10 +188,10 @@ export function tokenizer(code : string) : BaseToken[]
                     value:  raw.slice(1, -1)
                             .replace(/\\"/g,  '"')
                             .replace(/\\'/g,  "'")
-                            .replace(/\\\\/g, '\\')
-                            .replace(/\\n/g,  '\n')
-                            .replace(/\\t/g,  '\t')
-                            .replace(/\\r/g,  '\r'),
+                            .replace(/\\\\/g, "\\")
+                            .replace(/\\n/g,  "\n")
+                            .replace(/\\t/g,  "\t")
+                            .replace(/\\r/g,  "\r"),
                     row:    stringRow,
                     column: stringColumn
                 }

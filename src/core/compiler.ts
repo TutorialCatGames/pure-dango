@@ -1122,7 +1122,8 @@ export function buildBytecode(ast : any, filename : string = "<anonymous>")
 
     bytecode.push(operators.SETFILE, filename);
 
-    parseObject(ast, bytecode);
+    if (ast?.body?.length > 0)
+        parseObject(ast, bytecode);
 
     //console.dir(bytecode, {depth: null, colors: true});
     return bytecode;

@@ -121,7 +121,7 @@ export const syncFunctions =
 
     "print": (stack: Stack, getTrueValue: Function, ...args: any[]) : void =>
     {
-        const map     = args.map(item => isGFloat(item) ? item.inner.toFixed() : String(item));
+        const map     = args.map(item => isGFloat(item) ? item.inner.toFixed() : item);
         const joined  = joinStrings(map);
         const escaped = interpretEscapeCharacters(joined);
         console.log(escaped);
@@ -833,7 +833,7 @@ export const syncFunctions =
 
     "regularerror": (stack: Stack, getTrueValue: Function, ...args: any[]) : void =>
     {
-        const map     = args.map(item => isGFloat(item) ? item.inner.toFixed() : String(item));
+        const map     = args.map(item => isGFloat(item) ? item.inner.toFixed() : item);
         const joined  = joinStrings(map);
         const escaped = interpretEscapeCharacters(joined);
         console.error(`\x1B[1m\x1B[31m${escaped}\x1B[0m`);

@@ -44,9 +44,10 @@ type ParserToken =
     parameters? : {name: string, default: ParserToken | null, rest: boolean}[],
     methods?    : ParserToken[], 
 
-    body?  : ParserToken | ParserToken[],
-    then?  : ParserToken,
-    else?  : ParserToken | ParserToken[] | null,
+    body?       : ParserToken | ParserToken[],
+    returnType? : string | null,
+    then?       : ParserToken,
+    else?       : ParserToken | ParserToken[] | null,
 
     tryBlock?: ParserToken[],
     catchBlock?: ParserToken[],

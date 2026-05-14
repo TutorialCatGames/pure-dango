@@ -19,6 +19,7 @@ type Bytecode          =   Array<number | string | null | undefined>;
 
 type CallFrame = 
 {
+    returnType?   : string | null,
     bytecode      : Bytecode,
     pointer       : number,
     savedScope    : Scope,
@@ -27,6 +28,7 @@ type CallFrame =
     functionName  : string,
     file          : string,
     importer?     : string,
+
     pendingMethod? :
     {   
         methodBytecode   : Bytecode,
@@ -498,8 +500,29 @@ export class Scope
 function declareVariable(name: string)         : void  {return currentScope.declare(name);}
 function setVariable(name: string, value: any) : void  {isConstant(name); currentScope.set(name, value);}
 function getVariable(name: string)             : any   {return currentScope.get(name);}
-function pushScope()                           : void  {currentScope = new Scope(currentScope)}   // make a new scope that is the child of the currentScope
-function popScope()                            : void                 
+
+function checkParameterType(parameterName : string, typeAnnotation : string | null, value : any) : void
+{
+    if (!typeAnnotation)
+        return;
+
+    const valueType = syncFunctions.typeof([], () => "", value);
+    if (valueType !== typeAnnotation)
+        errorTemplate("checkParameterType", `type mismatch for parameter "${parameterName}", expected ${typeAnnotation}, got ${valueType}`);
+}
+
+function checkReturnType(functionName : string | null, returnType : string | null, value : any) : void
+{
+    if (!returnType)
+        return;
+
+    const valueType = syncFunctions.typeof([], () => "", value);
+    if (valueType !== returnType)
+        errorTemplate("checkParameterType", `return type mismatch in "${functionName ?? "<anonymous>"}", expected ${returnType}, got ${valueType}`);
+}
+
+function pushScope() : void  {currentScope = new Scope(currentScope)}   // make a new scope that is the child of the currentScope
+function popScope()  : void                 
 {
     if (currentScope.parent === undefined) 
         errorTemplate(`popScope`, "cannot pop global scope");
@@ -693,7 +716,12 @@ const commands : Array<Function | undefined> =
                     (parameter: any, i: number) =>
                     {
                         declareVariable(parameter.name);
-                        setVariable(parameter.name, args[i] !== undefined ? args[i] : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined));
+                        const value = args[i] !== undefined 
+                            ? args[i] 
+                            : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined);
+                        checkParameterType(parameter.name, parameter.typeAnnotation, value);
+                        
+                        setVariable(parameter.name, value);
                     }
                 );
                 
@@ -828,8 +856,9 @@ const commands : Array<Function | undefined> =
 
                 const value = args[i] !== undefined 
                     ? args[i] 
-                    : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined);
-                    
+                    : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined);        
+                checkParameterType(parameter.name, parameter.typeAnnotation, value);
+
                 setVariable(parameter.name, value);
             }
         });
@@ -842,6 +871,7 @@ const commands : Array<Function | undefined> =
                 pointer      : savedPointer,
                 savedScope,
                 returnMode   : "function",
+                returnType   : functionObject.returnType ?? null,
                 functionName : resolvedName,
                 file,
                 line         : callLine,
@@ -1206,7 +1236,12 @@ const commands : Array<Function | undefined> =
                     (parameter: any, i: number) =>
                     {
                         declareVariable(parameter.name);
-                        setVariable(parameter.name, args[i] !== undefined ? args[i] : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined));
+                        const value = args[i] !== undefined 
+                            ? args[i] 
+                            : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined);
+                        checkParameterType(parameter.name, parameter.typeAnnotation, value);
+
+                        setVariable(parameter.name, value);
                     }
                 );
 
@@ -1408,7 +1443,12 @@ const commands : Array<Function | undefined> =
                 else
                 {
                     declareVariable(parameter.name);
-                    setVariable(parameter.name, args[i] !== undefined ? args[i] : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined));
+                    const value = args[i] !== undefined 
+                        ? args[i] 
+                        : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined);        
+                    checkParameterType(parameter.name, parameter.typeAnnotation, value);
+
+                    setVariable(parameter.name, value);
                 }
             }
         );
@@ -1420,6 +1460,7 @@ const commands : Array<Function | undefined> =
                 pointer      : savedPointer,
                 savedScope,
                 returnMode   : "function",
+                returnType   : functionObject.returnType ?? null,
                 functionName : key,
                 file,
                 line,
@@ -1623,7 +1664,12 @@ export async function interpret(
  
                 if (operator === 25)   // RETURN
                 {
-                    const frame: any = callStack.pop();
+                    const frame : any = callStack.pop();
+
+                    // check return type if annotated (skip for constructors tho since they return the instance)
+                    if (frame.returnType && frame.returnMode !== "constructor" && frame.returnMode !== "super")
+                        checkReturnType(frame.functionName, frame.returnType, stack[stack.length - 1]);
+
                     activeBytecode   = frame.bytecode;
                     pointer          = frame.pointer;
                     currentScope     = frame.savedScope;
@@ -1636,7 +1682,7 @@ export async function interpret(
  
                         if (frame.pendingMethod)
                         {
-                            const { methodBytecode, methodKey, methodArgs, methodParameters } = frame.pendingMethod;
+                            const {methodBytecode, methodKey, methodArgs, methodParameters} = frame.pendingMethod;
  
                             const methodScope = new Scope(currentScope);
                             methodScope.declare("this");

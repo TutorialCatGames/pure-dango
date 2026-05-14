@@ -562,7 +562,7 @@ export function parseFunctionNode(tokens : Tokens, state : State, alreadyConsume
     next(tokens, state); // eat the (
 
     // get the parameter names
-    const parameters : {name: string, default: ParserToken | null, rest: boolean}[] = [];
+    const parameters : Array<{name: string, default: ParserToken | null, rest: boolean, typeAnnotation: string | null}> = [];
     while (peek(tokens, state) && peek(tokens, state).value !== ")")
     {
         const parameter = peek(tokens, state);
@@ -575,7 +575,7 @@ export function parseFunctionNode(tokens : Tokens, state : State, alreadyConsume
             if (!restParam || restParam.type !== "Identifier")
                 errorTemplate("parseFunctionNode", `expected parameter name after "...", got "${restParam}" at line ${parameter.row}:${parameter.column}`);
 
-            parameters.push({name: next(tokens, state)!.value, default: null, rest: true});
+            parameters.push({name: next(tokens, state)!.value, default: null, rest: true, typeAnnotation: null});
             break; // rest param must be last
         }
 
@@ -588,16 +588,23 @@ export function parseFunctionNode(tokens : Tokens, state : State, alreadyConsume
         if (parameter.type !== "Identifier")
             errorTemplate("parseFunctionNode", `expected parameter in function name "${name}" with type "Identifier", got "${parameter.value}" at line ${parameter.row}:${parameter.column}`);
 
-        const paramName = next(tokens, state)!.value;
+        const parameterName = next(tokens, state)!.value;
+
+        let parameterTypeAnnotation : string | null = null;
+        if (peek(tokens, state)?.value === ":" && tokens[state.position + 1]?.type === "Identifier")
+        {
+            next(tokens, state); // eat :
+            parameterTypeAnnotation = next(tokens, state)!.value;
+        }
 
         if (peek(tokens, state)?.value === "=")
         {
             next(tokens, state);   // eat =
             const defaultValue = parseExpression(tokens, 0, state, true);
-            parameters.push({name: paramName, default: defaultValue, rest: false});
+            parameters.push({name: parameterName, default: defaultValue, rest: false, typeAnnotation: parameterTypeAnnotation});
         }
-        else
-            parameters.push({name: paramName, default: null, rest: false});
+        else``
+            parameters.push({name: parameterName, default: null, rest: false, typeAnnotation: parameterTypeAnnotation});
 
         const nextToken = peek(tokens, state);
         if (nextToken && nextToken.value === ",") 
@@ -607,7 +614,14 @@ export function parseFunctionNode(tokens : Tokens, state : State, alreadyConsume
     const closingParentheses = peek(tokens, state);
     if (!closingParentheses || closingParentheses.value !== ")")
         errorTemplate("parseFunctionNode", `expected ")" after parameters in function declaration "${name}", got "${closingParentheses}"`);
-    next(tokens, state); // eat the )
+    next(tokens, state); // eat )
+
+    let returnType : string | null = null;
+    if (peek(tokens, state)?.value === ":" && tokens[state.position + 1]?.type === "Identifier")
+    {
+        next(tokens, state); // eat :
+        returnType = next(tokens, state)!.value;
+    }
 
     let body : ParserToken[];
     const openingBracket = peek(tokens, state);
@@ -626,6 +640,7 @@ export function parseFunctionNode(tokens : Tokens, state : State, alreadyConsume
         name,
         parameters,
         body,
+        returnType,
         row,
         column
     }

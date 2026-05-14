@@ -1032,21 +1032,22 @@ const typeMap : TypeMap = new Map([
 
             const parameters = node.parameters.map
             (
-                (parameter: any) => 
-                (
+                (parameter: any) => (
                     {
-                        name    : parameter.name,
-                        rest    : parameter.rest,
-                        default : parameter.default ? parseObject(parameter.default, [], true) : null
+                        name           : parameter.name,
+                        rest           : parameter.rest,
+                        default        : parameter.default ? parseObject(parameter.default, [], true) : null,
+                        typeAnnotation : parameter.typeAnnotation ?? null
                     }
                 )
             );
 
             const functionObject =
             {
-                bytecode: newBytecode,
+                bytecode   : newBytecode,
                 parameters,
-                ast: node
+                returnType : node.returnType ?? null,
+                ast        : node
             };
 
             bytecode.push(operators.PUSH, functionObject);
@@ -1096,21 +1097,22 @@ const typeMap : TypeMap = new Map([
 
             const parameters = node.parameters.map
             (
-                (parameter: any) =>
-                (
+                (parameter: any) => (
                     {
-                        name    : parameter.name,
-                        rest    : parameter.rest,
-                        default : parameter.default ? parseObject(parameter.default, [], true) : null
+                        name           : parameter.name,
+                        rest           : parameter.rest,
+                        default        : parameter.default ? parseObject(parameter.default, [], true) : null,
+                        typeAnnotation : parameter.typeAnnotation ?? null
                     }
                 )
             );
 
-            const functionObject : {bytecode: Bytecode, parameters : any, ast : any}=
+            const functionObject =
             {
-                bytecode: newBytecode,
+                bytecode   : newBytecode,
                 parameters,
-                ast: node
+                returnType : node.returnType ?? null,
+                ast        : node
             }
 
             bytecode.push(operators.PUSH, functionObject);

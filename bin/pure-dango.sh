@@ -24,14 +24,14 @@ if [[ "$1" == "update" || "$1" == "--update" ]]; then
     LATEST_RELEASE=$(curl -s https://api.github.com/repos/TutorialCatGames/pure-dango/releases/latest)
     
     if [[ $? -ne 0 ]]; then
-        echo "Error: Failed to fetch release information"
+        echo "[ERROR] Failed to fetch release information"
         exit 1
     fi
     
     LATEST_TAG=$(echo "$LATEST_RELEASE" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
     
     if [[ -z "$LATEST_TAG" ]]; then
-        echo "Error: Could not determine latest version"
+        echo "[ERROR] Could not determine latest version"
         exit 1
     fi
     
@@ -41,7 +41,7 @@ if [[ "$1" == "update" || "$1" == "--update" ]]; then
     DOWNLOAD_URL=$(echo "$LATEST_RELEASE" | grep '"tarball_url":' | sed -E 's/.*"([^"]+)".*/\1/')
     
     if [[ -z "$DOWNLOAD_URL" ]]; then
-        echo "Error: Could not find download URL"
+        echo "[ERROR] Could not find download URL"
         exit 1
     fi
     
@@ -55,7 +55,7 @@ if [[ "$1" == "update" || "$1" == "--update" ]]; then
     curl -L -o "$DOWNLOAD_FILE" "$DOWNLOAD_URL"
     
     if [[ $? -ne 0 ]]; then
-        echo "Error: Failed to download update"
+        echo "[ERROR] Failed to download update"
         rm -rf "$TEMP_DIR"
         exit 1
     fi
@@ -66,7 +66,7 @@ if [[ "$1" == "update" || "$1" == "--update" ]]; then
     tar -xzf "$DOWNLOAD_FILE" -C "$TEMP_DIR"
     
     if [[ $? -ne 0 ]]; then
-        echo "Error: Failed to extract update"
+        echo "[ERROR] Failed to extract update"
         rm -rf "$TEMP_DIR"
         exit 1
     fi
@@ -80,7 +80,7 @@ if [[ "$1" == "update" || "$1" == "--update" ]]; then
     EXTRACTED_DIR=$(find "$TEMP_DIR" -type d -name "TutorialCatGames-pure-dango-*" -maxdepth 1 | head -n 1)
     
     if [[ -z "$EXTRACTED_DIR" ]]; then
-        echo "Error: Could not find extracted directory"
+        echo "[ERROR] Could not find extracted directory"
         rm -rf "$TEMP_DIR"
         exit 1
     fi
@@ -114,22 +114,31 @@ if [[ "$1" == "update" || "$1" == "--update" ]]; then
     exit 0
 fi
 
+# pure-dango --version / pure-dango version / pure-dango -v
+if [[ "$1" == "version" || "$1" == "--version" || "$1" == "-v" ]]; then
+    VERSION=$(node -e "console.log(require('$PROJECT_ROOT/package.json').version)")
+    echo "pure-dango v$VERSION"
+    exit 0
+fi
+
 # pure-dango -h
 if [[ "$1" == "-help" || "$1" == "--help" || "$1" == "-h" ]]; then
     echo "Usage: pure-dango [OPTIONS] [file]"
     echo ""
     echo "Options:"
-    echo "  -help, --help, -h : Show this help message"
-    echo "  update, --update  : Update to the latest version from GitHub"
-    echo "  -dev              : Run in development mode (uses Node.js directly)"
-    echo "  -r [FILE]         : Rebuild the exe then run the file"
-    echo "  -r                : Rebuild only"
+    echo "  -help, --help, -h      : Show this help message"
+    echo "  version, --version, -v : Show the current version"
+    echo "  update, --update       : Update to the latest version from GitHub"
+    echo "  -dev                   : Run in development mode (uses Node.js directly)"
+    echo "  -r [FILE]              : Rebuild the exe then run the file"
+    echo "  -r                     : Rebuild only"
     echo ""
     echo "Examples:"
     echo "  pure-dango hello.pds         # Run using compiled executable"
     echo "  pure-dango -dev hello.pds    # Run using Node.js (for development)"
     echo "  pure-dango -r hello.pds      # Rebuild and run"
     echo "  pure-dango update            # Update to latest version"
+    echo "  pure-dango --version         # Show version"
     exit 0
 fi
 

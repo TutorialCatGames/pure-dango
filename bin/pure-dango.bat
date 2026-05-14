@@ -11,6 +11,11 @@ if "%1"=="--help" goto showhelp
 if "%1"=="-h"     goto showhelp
 if "%1"=="/?"     goto showhelp
 
+REM Show current version
+if "%1"=="version"   goto showversion
+if "%1"=="--version" goto showversion
+if "%1"=="-v"        goto showversion
+
 REM dev mode - uses node
 if "%1"=="-dev"   goto devmode
 
@@ -28,7 +33,7 @@ echo Checking for updates...
 REM Check if curl is available
 where curl >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Error: curl is required for updates. Please install curl or download manually from:
+    echo [ERROR] curl is required for updates. Please install curl or download manually from:
     echo https://github.com/TutorialCatGames/pure-dango/releases/latest
     pause
     exit /b 1
@@ -38,7 +43,7 @@ REM Get latest release info from GitHub API
 set RELEASE_JSON=%TEMP%\pd-release.json
 curl -s https://api.github.com/repos/TutorialCatGames/pure-dango/releases/latest > "%RELEASE_JSON%"
 if %errorlevel% neq 0 (
-    echo Error: Failed to fetch release information
+    echo [ERROR] Failed to fetch release information
     pause
     exit /b 1
 )
@@ -48,14 +53,14 @@ for /f "usebackq delims=" %%a in (`powershell -NoProfile -Command "(Get-Content 
 for /f "usebackq delims=" %%a in (`powershell -NoProfile -Command "(Get-Content '%RELEASE_JSON%' | ConvertFrom-Json).zipball_url"`) do set DOWNLOAD_URL=%%a
 
 if "!LATEST_TAG!"=="" (
-    echo Error: Could not determine latest version
+    echo [ERROR] Could not determine latest version
     del "%RELEASE_JSON%"
     pause
     exit /b 1
 )
 
 if "!DOWNLOAD_URL!"=="" (
-    echo Error: Could not find download URL
+    echo [ERROR] Could not find download URL
     del "%RELEASE_JSON%"
     pause
     exit /b 1
@@ -71,7 +76,7 @@ mkdir "!TEMP_DIR!"
 REM Download the release
 curl -L -o "!TEMP_DIR!\source.zip" "!DOWNLOAD_URL!"
 if %errorlevel% neq 0 (
-    echo Error: Failed to download update
+    echo [ERROR] Failed to download update
     rmdir /s /q "!TEMP_DIR!"
     del "%RELEASE_JSON%"
     pause
@@ -90,7 +95,7 @@ if %errorlevel% equ 0 (
 )
 
 if %errorlevel% neq 0 (
-    echo Error: Failed to extract update
+    echo [ERROR] Failed to extract update
     rmdir /s /q "!TEMP_DIR!"
     del "%RELEASE_JSON%"
     pause
@@ -113,7 +118,7 @@ for /d %%d in ("!TEMP_DIR!\TutorialCatGames-pure-dango-*") do (
 
 :found_extracted
 if "!EXTRACTED_DIR!"=="" (
-    echo Error: Could not find extracted directory
+    echo [ERROR] Could not find extracted directory
     rmdir /s /q "!TEMP_DIR!"
     del "%RELEASE_JSON%"
     pause
@@ -140,7 +145,7 @@ REM Build the project
 echo Building project...
 call npm run build >nul
 if errorlevel 1 (
-    echo Error: Build failed!
+    echo [ERROR] Build failed!"
     rmdir /s /q "!TEMP_DIR!"
     del "%RELEASE_JSON%"
     pause
@@ -214,6 +219,11 @@ if errorlevel 1 (
     exit /b 1
 )
 
+:showversion
+for /f "usebackq delims=" %%v in (`powershell -NoProfile -Command "(Get-Content '%~dp0..\package.json' | ConvertFrom-Json).version"`) do set PD_VERSION=%%v
+echo pure-dango v%PD_VERSION%
+goto :eof
+
 set NODE_OPTIONS=--no-warnings
 "%~dp0..\dist\PureDangoLauncher.exe" run "%~2"
 pause
@@ -223,15 +233,17 @@ goto :eof
 echo Usage: pure-dango [OPTIONS] [file]
 echo.
 echo Options:
-echo   -help, --help, -h, /? : Show this help message
-echo   update, --update      : Update to the latest version from GitHub
-echo   -dev                  : Run in development mode (uses Node.js directly)
-echo   -r [FILE]             : Rebuild the exe then run the file
-echo   -r                    : Rebuild the exe only
+echo   -help, --help, -h, /?  : Show this help message
+echo   version, --version, -v : Show the current version
+echo   update, --update       : Update to the latest version from GitHub
+echo   -dev                   : Run in development mode (uses Node.js directly)
+echo   -r [FILE]              : Rebuild the exe then run the file
+echo   -r                     : Rebuild the exe only
 echo.
 echo Examples:
 echo   pure-dango hello.pds         # Run using compiled executable
 echo   pure-dango -dev hello.pds    # Run using Node.js (for development)
 echo   pure-dango -r hello.pds      # Rebuild and run
 echo   pure-dango update            # Update to latest version
+echo   pure-dango --version         # Show version
 goto :eof

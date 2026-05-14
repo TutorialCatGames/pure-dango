@@ -139,6 +139,7 @@ const operators : Record<string, number> = Object.freeze({
     OBJKEYS:    40,   // pops object, pushes Object.keys() as plain array
     ARRLEN:     41,   // pops array, pushes its .length
     ALLOCCONST: 42,   // allocates a variable as a constant
+    TYPECHECK:  43,   // checks the type of stack top, use: TYPECHECK variableName typeName
 })
 
 const binaryOperators : Record<string, number> = Object.freeze({
@@ -377,6 +378,10 @@ const typeMap : TypeMap = new Map([
             if (node.constant)
             {
                 parseObject(node.value, bytecode, true);
+
+                if (node.typeAnnotation)
+                    bytecode.push(operators.TYPECHECK, node.name, node.typeAnnotation);
+
                 bytecode.push(operators.ALLOCCONST, node.name);
             }
             else
@@ -384,6 +389,9 @@ const typeMap : TypeMap = new Map([
                 bytecode.push(operators.ALLOC, node.name);
                 if (node.value !== null) 
                     parseObject(node.value, bytecode, true);
+
+                if (node.typeAnnotation)
+                    bytecode.push(operators.TYPECHECK, node.name, node.typeAnnotation);
 
                 bytecode.push(operators.STORE, node.name);
             }

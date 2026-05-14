@@ -55,13 +55,21 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
 
     const isConstant = token.value === "const";
 
-    const gatherNames = function(names : Array<string>, breakOnNoComma? : boolean) : boolean
+    const gatherNames = function(names : Array<string>, typeAnnotations : Array<string | null>, breakOnNoComma? : boolean) : boolean
     {
         const nextToken = peek(tokens, state);
         if (!nextToken || nextToken.type !== "Identifier")
             errorTemplate("variableHandler", `expected a variable after keyword "${token.value}" at line ${row}:${column}`);
 
         names.push(next(tokens, state)!.value);
+
+        if (peek(tokens, state)?.value === ":" && tokens[state.position + 1]?.type === "Identifier")
+        {
+            next(tokens, state); // eat :
+            typeAnnotations.push(next(tokens, state)!.value);
+        }
+        else
+            typeAnnotations.push(null);
 
         if (peek(tokens, state)?.value === ",")
             next(tokens, state);
@@ -77,8 +85,9 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
         next(tokens, state); // eat [
 
         const names : string[] = [];
+        const typeAnnotations0 : Array<string | null> = [];
         while (peek(tokens, state) && peek(tokens, state).value !== "]")
-            gatherNames(names);
+            gatherNames(names, typeAnnotations0);
 
         if (!peek(tokens, state) || peek(tokens, state).value !== "]")
             errorTemplate("variableHandler", `expected "]" to close array destructure at line ${row}:${column}`);
@@ -105,8 +114,9 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
             next(tokens, state); // eat [
             
             const names : string[] = [];
+            const typeAnnotations1 : Array<string | null> = [];
             while (peek(tokens, state) && peek(tokens, state).value !== "]")
-                gatherNames(names);
+                gatherNames(names, typeAnnotations1);
 
             if (!peek(tokens, state) || peek(tokens, state).value !== "]")
                 errorTemplate("variableHandler", `expected "]" to close inner array destructure at line ${row}:${column}`);
@@ -129,8 +139,9 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
 
         // normal object destructure: new {a, b} = expr()
         const names : string[] = [];
+        const typeAnnotations2 : Array<string | null> = [];
         while (peek(tokens, state) && peek(tokens, state)?.value !== "}")
-            gatherNames(names);
+            gatherNames(names, typeAnnotations2);
 
         if (!peek(tokens, state) || peek(tokens, state).value !== "}")
             errorTemplate("variableHandler", `expected "}" to close object destructure at line ${row}:${column}`);
@@ -148,9 +159,10 @@ export function variableHandler(ast : AST, token : BaseToken, tokens : Tokens, s
 
     // collect all names
     const names : string[] = [];
+    const typeAnnotations : Array<string | null> = [];
     do
     {
-        if (gatherNames(names, true))
+        if (gatherNames(names, typeAnnotations, true))
             break;
     } while (true);
 

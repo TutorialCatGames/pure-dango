@@ -1504,6 +1504,18 @@ const commands : Array<Function | undefined> =
         setVariable(name, value);
         constants[name] = true;
     },   // ALLOCCONST
+
+    (bytecode : Bytecode) : void =>
+    {
+        const variableName : string = (next(bytecode)) as string;
+        const expectedType : string = (next(bytecode)) as string;
+        const value = stack[stack.length - 1];
+
+        const valueType : string = syncFunctions.typeof([], () => "", value);
+
+        if (valueType !== expectedType)
+            errorTemplate("TYPECHECK", `type mismatch for "${variableName}", expected ${expectedType}, got ${valueType}`);
+    },   // TYPECHECK
 ];
 
 const asyncOpcodes = new Set([5, 10, 13, 26, 35, 37]);

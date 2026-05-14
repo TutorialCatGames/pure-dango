@@ -16,7 +16,8 @@ type ParserToken =
     object?   : any,
     property? : any,
 
-    constant? : boolean,
+    constant?       : boolean,
+    typeAnnotation? : boolean,
 
     operator? : string,
     left?     : any,

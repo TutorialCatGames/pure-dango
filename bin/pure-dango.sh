@@ -10,6 +10,29 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PLATFORM="$(uname -s)"
 
+check_for_updates() 
+{
+    if [[ -n "$PD_UPDATE_CHECKED" ]]; then return; fi
+    export PD_UPDATE_CHECKED=1
+
+    CURRENT_VERSION=$(node -e "console.log(require('$PROJECT_ROOT/package.json').version)" 2>/dev/null)
+    if [[ -z "$CURRENT_VERSION" ]]; then return; fi
+
+    LATEST_RELEASE=$(curl -s --max-time 2 https://api.github.com/repos/TutorialCatGames/pure-dango/releases/latest 2>/dev/null)
+    if [[ -z "$LATEST_RELEASE" ]]; then return; fi
+
+    LATEST_VERSION=$(echo "$LATEST_RELEASE" | grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
+    if [[ -z "$LATEST_VERSION" || "$CURRENT_VERSION" == "$LATEST_VERSION" ]]; then return; fi
+
+    if [[ "$(printf '%s\n' "$CURRENT_VERSION" "$LATEST_VERSION" | sort -V | head -n1)" == "$CURRENT_VERSION" ]]; then
+        echo ""
+        echo -e "\e[33m+------------------------------------------------+\e[0m"
+        echo -e "\e[33m  Update available! $CURRENT_VERSION -> $LATEST_VERSION\e[0m"
+        echo -e "\e[36m  Run 'pure-dango update' to update\e[0m"
+        echo -e "\e[33m+------------------------------------------------+\e[0m"
+    fi
+}
+
 if [[ "$PLATFORM" == "Darwin" ]]; then
     LAUNCHER="$PROJECT_ROOT/dist/PureDangoLauncher-macos"
 else
@@ -171,3 +194,5 @@ if [[ "$1" == "-r" ]]; then
 fi
 
 "$LAUNCHER" run "$1"
+
+check_for_updates

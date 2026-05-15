@@ -24,7 +24,7 @@ if "%1"=="-r"     goto rebuild
 
 REM use executable
 "%~dp0..\dist\PureDangoLauncher.exe" run "%~1"
-pause
+call :check_updates
 goto :eof
 
 :update
@@ -197,6 +197,7 @@ if %errorlevel% equ 0 (
         node dist\PureDango.cjs "%~2"
     )
 )
+call :check_updates
 pause
 goto :eof
 
@@ -218,15 +219,14 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+"%~dp0..\dist\PureDangoLauncher.exe" run "%~2"
+call :check_updates
+pause
+goto :eof
 
 :showversion
 for /f "usebackq delims=" %%v in (`powershell -NoProfile -Command "(Get-Content '%~dp0..\package.json' | ConvertFrom-Json).version"`) do set PD_VERSION=%%v
 echo pure-dango v%PD_VERSION%
-goto :eof
-
-set NODE_OPTIONS=--no-warnings
-"%~dp0..\dist\PureDangoLauncher.exe" run "%~2"
-pause
 goto :eof
 
 :showhelp
@@ -246,4 +246,16 @@ echo   pure-dango -dev hello.pds    # Run using Node.js (for development)
 echo   pure-dango -r hello.pds      # Rebuild and run
 echo   pure-dango update            # Update to latest version
 echo   pure-dango --version         # Show version
+goto :eof
+
+:check_updates
+for /f "usebackq" %%p in (`powershell -NoProfile -Command "$id=(gwmi Win32_Process -Filter ('ProcessId='+$PID)).ParentProcessId; (gwmi Win32_Process -Filter ('ProcessId='+$id)).ParentProcessId"`) do set TERM_PID=%%p
+set "CACHE=%TEMP%\pd-checked-%TERM_PID%.tmp"
+if exist "%CACHE%" goto :eof
+echo 1>"%CACHE%"
+powershell -NoProfile -Command ^
+  "$pkg=[System.IO.Path]::GetFullPath('%~dp0..\package.json');" ^
+  "$c=(Get-Content $pkg | ConvertFrom-Json).version;" ^
+  "$l=((Invoke-RestMethod 'https://api.github.com/repos/TutorialCatGames/pure-dango/releases/latest' -TimeoutSec 3).tag_name -replace '^v','');" ^
+  "if([version]$l -gt [version]$c){ Write-Host ''; Write-Host '+------------------------------------------------+' -ForegroundColor Yellow; Write-Host ('  Update available! ' + $c + ' -> ' + $l) -ForegroundColor Yellow; Write-Host '  Run pure-dango update to update' -ForegroundColor Cyan; Write-Host '+------------------------------------------------+' -ForegroundColor Yellow }"
 goto :eof

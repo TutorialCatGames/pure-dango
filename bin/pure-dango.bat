@@ -249,13 +249,16 @@ echo   pure-dango --version         # Show version
 goto :eof
 
 :check_updates
-for /f "usebackq" %%p in (`powershell -NoProfile -Command "$id=(gwmi Win32_Process -Filter ('ProcessId='+$PID)).ParentProcessId; (gwmi Win32_Process -Filter ('ProcessId='+$id)).ParentProcessId"`) do set TERM_PID=%%p
-set "CACHE=%TEMP%\pd-checked-%TERM_PID%.tmp"
+set "CACHE=%TEMP%\pd-checked-%date:~-4%%date:~-7,2%%date:~-10,2%.tmp"
 if exist "%CACHE%" goto :eof
 echo 1>"%CACHE%"
+
 powershell -NoProfile -Command ^
   "$pkg=[System.IO.Path]::GetFullPath('%~dp0..\package.json');" ^
   "$c=(Get-Content $pkg | ConvertFrom-Json).version;" ^
-  "$l=((Invoke-RestMethod 'https://api.github.com/repos/TutorialCatGames/pure-dango/releases/latest' -TimeoutSec 3).tag_name -replace '^v','');" ^
-  "if([version]$l -gt [version]$c){ Write-Host ''; Write-Host '+------------------------------------------------+' -ForegroundColor Yellow; Write-Host ('  Update available! ' + $c + ' -> ' + $l) -ForegroundColor Yellow; Write-Host '  Run pure-dango update to update' -ForegroundColor Cyan; Write-Host '+------------------------------------------------+' -ForegroundColor Yellow }"
+  "try {" ^
+  "  $l=((Invoke-RestMethod 'https://api.github.com/repos/TutorialCatGames/pure-dango/releases/latest' -TimeoutSec 3).tag_name -replace '^v','');" ^
+  "  if([version]$l -gt [version]$c){ Write-Host ''; Write-Host '+------------------------------------------------+' -ForegroundColor Yellow; Write-Host ('  Update available! ' + $c + ' -> ' + $l) -ForegroundColor Yellow; Write-Host '  Run pure-dango update to update' -ForegroundColor Cyan; Write-Host '+------------------------------------------------+' -ForegroundColor Yellow }" ^
+  "} catch {}"
+
 goto :eof

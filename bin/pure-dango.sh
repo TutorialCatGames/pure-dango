@@ -12,8 +12,8 @@ PLATFORM="$(uname -s)"
 
 check_for_updates() 
 {
-    if [[ -n "$PD_UPDATE_CHECKED" ]]; then return; fi
-    export PD_UPDATE_CHECKED=1
+    local CACHE="${TMPDIR:-/tmp}/pd-checked-$(date +%Y%m%d).tmp"
+    if [[ -f "$CACHE" ]]; then return; fi
 
     CURRENT_VERSION=$(node -e "console.log(require('$PROJECT_ROOT/package.json').version)" 2>/dev/null)
     if [[ -z "$CURRENT_VERSION" ]]; then return; fi
@@ -25,11 +25,14 @@ check_for_updates()
     if [[ -z "$LATEST_VERSION" || "$CURRENT_VERSION" == "$LATEST_VERSION" ]]; then return; fi
 
     if [[ "$(printf '%s\n' "$CURRENT_VERSION" "$LATEST_VERSION" | sort -V | head -n1)" == "$CURRENT_VERSION" ]]; then
+        touch "$CACHE"
         echo ""
         echo -e "\e[33m+------------------------------------------------+\e[0m"
         echo -e "\e[33m  Update available! $CURRENT_VERSION -> $LATEST_VERSION\e[0m"
         echo -e "\e[36m  Run 'pure-dango update' to update\e[0m"
         echo -e "\e[33m+------------------------------------------------+\e[0m"
+    else
+        touch "$CACHE"
     fi
 }
 
@@ -183,6 +186,7 @@ if [[ "$1" == "-dev" ]]; then
         SKIP_EXE=true npm run build
         node dist/PureDango.cjs "$2"
     fi
+    check_for_updates
     exit 0
 fi
 

@@ -3,7 +3,7 @@
     "version": "1.8.0",
     "type": "module",
     "description": "A simple programming language built in JavaScript",
-    "license": "UNLICENSED",
+    "license": "MIT",
     "bin": {
         "pure-dango": "src/index.ts"
     },

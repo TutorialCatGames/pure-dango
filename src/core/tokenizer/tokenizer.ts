@@ -11,6 +11,7 @@ const REGEX = new RegExp([
     "(\u2018(?:[^\u2018\u2019\\\\]|\\\\.)*\u2019)", // curly double quote strings
 
     // multi-char operators
+    "\\?\\?",
     "&&", "\\|\\|",
     "!=", "<=", ">=", "==",
     "--", "\\+\\+",
@@ -49,7 +50,7 @@ type MatchIterable = IterableIterator<RegExpMatchArray>;
 const keywordSet = new Set(["new","const","if","else","while","continue","break","for","in","of","function","return","import","class","extends","inst","internal","try","catch","finally","do","switch","case","default"]);
 const separatorSet = new Set(["\n", ",", "\t", ";"]);
 const operatorSet = new Set([
-    "...", "&&", "||", "{", "}", "[", "]",
+    "...", "??", "&&", "||", "{", "}", "[", "]",
     "!=", "<=", ">=", "==",
     "-=", "+=", "++", "/=", "*=", "--",
     "&=", "|=", "^=",

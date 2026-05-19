@@ -356,6 +356,28 @@ const typeMap : TypeMap = new Map([
                 bytecode[jumpToEnd + 1] = end;
             }
 
+            else if (node.operator === "??")
+            {
+                const tempName = `__nullish_${tempCounter++}__`;
+                bytecode.push(operators.ALLOC, tempName);
+                bytecode.push(operators.STORE, tempName);
+                bytecode.push(operators.LOAD,  tempName);
+
+                const jumpIfNull : number = bytecode.length;
+                bytecode.push(operators.JZ, 0); // if null/undefined, go to right
+
+                bytecode.push(operators.LOAD, tempName);
+                const jumpToEnd : number = bytecode.length;
+                bytecode.push(operators.JMP, 0);
+
+                const rightLabel : number = bytecode.length;
+                bytecode[jumpIfNull + 1] = rightLabel;
+                parseObject(node.right, bytecode, true);
+
+                const end : number = bytecode.length;
+                bytecode[jumpToEnd + 1] = end;
+            }
+
             else
             {
                 const jumpIfFalse : number = bytecode.length;

@@ -35,6 +35,7 @@ export const OPERATORS : Operators =
     // logical operators
     "&&": {prec: 3, assoc: "left", type: "logical"},
     "||": {prec: 2, assoc: "left", type: "logical"},
+    "??": {prec: 1, assoc: "left", type: "logical"},
 
     // unary operators
     "!":  {prec: 30, assoc: "right", type: "unary", fix: "prefix"},

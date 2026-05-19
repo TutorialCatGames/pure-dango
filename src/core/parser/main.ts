@@ -29,7 +29,7 @@ export const OPERATORS : Operators =
     "!=": {prec: 7, assoc: "left", type: "binary"},
     ">":  {prec: 8, assoc: "left", type: "binary"},
     "<":  {prec: 8, assoc: "left", type: "binary"},
-    ">=": {prec: 8, assoc: "left", type: "binarsy"},
+    ">=": {prec: 8, assoc: "left", type: "binary"},
     "<=": {prec: 8, assoc: "left", type: "binary"},
 
     // logical operators
@@ -356,11 +356,17 @@ export function parseExpression(tokens : Tokens, minimumPrecedence = 0, state : 
 
             const baseOperators : Record<string, string> =
             {
-                "+=": "+",
-                "-=": "-",
-                "*=": "*",
-                "/=": "/",
-                "%=": "%"
+                "+=":   "+",
+                "-=":   "-",
+                "*=":   "*",
+                "/=":   "/",
+                "%=":   "%",
+                "&=":   "&",
+                "|=":   "|",
+                "^=":   "^",
+                "<<=":  "<<",
+                ">>=":  ">>",
+                ">>>=": ">>>",
             };
 
             const name = leftNode.type === "ArrayAccess" || leftNode.type === "MemberExpression" 

@@ -29,7 +29,7 @@ export const OPERATORS : Operators =
     "!=": {prec: 7, assoc: "left", type: "binary"},
     ">":  {prec: 8, assoc: "left", type: "binary"},
     "<":  {prec: 8, assoc: "left", type: "binary"},
-    ">=": {prec: 8, assoc: "left", type: "binary"},
+    ">=": {prec: 8, assoc: "left", type: "binarsy"},
     "<=": {prec: 8, assoc: "left", type: "binary"},
 
     // logical operators
@@ -42,7 +42,21 @@ export const OPERATORS : Operators =
     "+u": {prec: 30, assoc: "right", type: "unary", fix: "prefix"},
     "-u": {prec: 30, assoc: "right", type: "unary", fix: "prefix"},
     "++": {prec: 30, assoc: "right", type: "unary", fix: "both"},
-    "--": {prec: 30, assoc: "right", type: "unary", fix: "both"} 
+    "--": {prec: 30, assoc: "right", type: "unary", fix: "both"},
+
+    // bitwise operators
+    "&":    {prec: 9,  assoc: "left", type: "binary"},
+    "^":    {prec: 8,  assoc: "left", type: "binary"},
+    "|":    {prec: 7,  assoc: "left", type: "binary"},
+    "<<":   {prec: 12, assoc: "left", type: "binary"},
+    ">>":   {prec: 12, assoc: "left", type: "binary"},
+    ">>>":  {prec: 12, assoc: "left", type: "binary"},
+    "&=":   {prec: 5, assoc: "right", type: "assignment"},
+    "|=":   {prec: 5, assoc: "right", type: "assignment"},
+    "^=":   {prec: 5, assoc: "right", type: "assignment"},
+    "<<=":  {prec: 5, assoc: "right", type: "assignment"},
+    ">>=":  {prec: 5, assoc: "right", type: "assignment"},
+    ">>>=": {prec: 5, assoc: "right", type: "assignment"},
 }
 
 export function peek(tokens : Tokens, state : State) : BaseToken

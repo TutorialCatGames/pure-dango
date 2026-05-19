@@ -155,7 +155,11 @@ process.on(
 
     try
     {
-        const FILE =       fs.readFileSync(filePath, "utf-8"); // Read the file given by the user
+        let FILE = fs.readFileSync(filePath, "utf-8"); // Read the file given by the user
+        if (FILE.charCodeAt(0) === 0xFFFE || FILE.charCodeAt(0) === 0xFEFF)
+            FILE = Buffer.from(FILE, "binary").toString("utf16le");
+        FILE = FILE.replace(/\u0000/g, "");
+
         const srcMTime =   fs.statSync(filePath).mtimeMs; 
         
         await initGMP();

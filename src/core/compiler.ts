@@ -109,7 +109,7 @@ const operators : Record<string, number> = Object.freeze({
     CALL:       10,   // calls a function
     NEG:        11,   // short for negative
     NOT:        12, 
-    BITNOT:     13,   // makes the value negative, then adds -1 to the negative
+    BITNOT:     13,   // flips all bits (~x = -(x+1))
     JMP:        14,   // jumps
     JZ:         15,   // jump if zero
     EQ:         16,   // ==
@@ -140,6 +140,12 @@ const operators : Record<string, number> = Object.freeze({
     ARRLEN:     41,   // pops array, pushes its .length
     ALLOCCONST: 42,   // allocates a variable as a constant
     TYPECHECK:  43,   // checks the type of stack top, use: TYPECHECK variableName typeName
+    AND:        44,   // &
+    OR:         45,   // |
+    XOR:        46,   // ^
+    SHL:        47,   // <<
+    SHR:        48,   // >>
+    USHR:       49,   // >>>
 })
 
 const binaryOperators : Record<string, number> = Object.freeze({
@@ -154,7 +160,14 @@ const binaryOperators : Record<string, number> = Object.freeze({
     ">":    operators.GT,
     "<":    operators.LT,
     ">=":   operators.GTE,
-    "<=":   operators.LTE
+    "<=":   operators.LTE,
+
+    "&":    operators.AND,
+    "|":    operators.OR,
+    "^":    operators.XOR,
+    "<<":   operators.SHL,
+    ">>":   operators.SHR,
+    ">>>":  operators.USHR,
 });
 
 const unaryOperators : Map<string, (node : any, bytecode : Bytecode, keepValue : boolean) => void> = new Map([

@@ -105,7 +105,7 @@ export const GF = (x: any): GFloat =>
 export const isGFloat   = (x : any) : x is GFloat => x instanceof GFloat;
 export const isGWrapper = (x : any) : boolean => 
     typeof x.rndMode === "number" &&
-    typeof x.precisionBits === "number" && 
+    typeof x.precisionBits === "number" &&  
     typeof x.radix === "number" && 
     typeof x.mpfr_t === "number";
 
@@ -285,7 +285,10 @@ function BinaryOperator(type : string) : Array<any>
     
     if ((typeof left === "string" || typeof right === "string") && type !== "comparison")
     {
-        const toStr = (v: any): string => isGFloat(v) ? v.inner.toString() : v === null || v === undefined ? "" : String(v);
+        if (type === "bitwise")
+            errorTemplate("BinaryOperator", `bitwise operators cannot be used on strings`);
+
+        const toStr = (value : any): string => isGFloat(value) ? value.inner.toString() : value === null || value === undefined ? "" : String(value);
         return [toStr(left), toStr(right)];
     }
 
@@ -1557,6 +1560,48 @@ const commands : Array<Function | undefined> =
         if (valueType !== expectedType)
             errorTemplate("TYPECHECK", `type mismatch for "${variableName}", expected ${expectedType}, got ${valueType}`);
     },   // TYPECHECK
+
+    commandMapBinaryOperators
+    (
+        (left, right) => BigInt(left) & BigInt(right),
+        ()            => errorTemplate(`AND`, "bitwise AND not supported on floats"),
+        "bitwise"
+    ),   // AND
+
+    commandMapBinaryOperators
+    (
+        (left, right) => BigInt(left) | BigInt(right),
+        ()            => errorTemplate(`OR`, "bitwise OR not supported on floats"),
+        "bitwise"
+    ),   // OR
+
+    commandMapBinaryOperators
+    (
+        (left, right) => BigInt(left) ^ BigInt(right),
+        ()            => errorTemplate(`XOR`, "bitwise XOR not supported on floats"),
+        "bitwise"
+    ),   // XOR
+
+    commandMapBinaryOperators
+    (
+        (left, right) => BigInt(left) << BigInt(right),
+        ()            => errorTemplate(`SHL`, "bitwise SHL not supported on floats"),
+        "bitwise"
+    ),   // SHL
+
+    commandMapBinaryOperators
+    (
+        (left, right) => BigInt(left) >> BigInt(right),
+        ()            => errorTemplate(`SHR`, "bitwise SHR not supported on floats"),
+        "bitwise"
+    ),   // SHR
+
+    commandMapBinaryOperators
+    (
+        (left, right) => BigInt(left) >> BigInt(right) & 0xFFFFFFFFFFFFFFFFn,
+        ()            => errorTemplate(`USHR`, "bitwise USHR not supported on floats"),
+        "bitwise"
+    ),   // USHR
 ];
 
 const asyncOpcodes = new Set([5, 10, 13, 26, 35, 37]);

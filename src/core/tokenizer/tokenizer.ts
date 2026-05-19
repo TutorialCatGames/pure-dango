@@ -4,8 +4,8 @@ import * as quote_crimes from "./funnies";
 
 const REGEX = new RegExp([
     // strings
-    "(`(?:[^`\\\\]|\\\\.)*`)",           // backtick strings
-    "('(?:[^'\\\\]|\\\\.)*')",           // single quote strings
+    "(`(?:[^`\\\\]|\\\\.)*`)", // backtick strings
+    "('(?:[^'\\\\]|\\\\.)*')", // single quote strings
 
     '(\u201C(?:[^\u201C\u201D\\\\]|\\\\.)*\u201D)', // curly single quote strings
     "(\u2018(?:[^\u2018\u2019\\\\]|\\\\.)*\u2019)", // curly double quote strings
@@ -15,12 +15,15 @@ const REGEX = new RegExp([
     "!=", "<=", ">=", "==",
     "--", "\\+\\+",
     "-=", "\\+=", "/=", "\\*=",
-    "\\.\\.\.",                          // spread
+    "&=", "\\|=", "\\^=", // bitwise assignment
+    "<<=", ">>=", ">>>=", // shift assignment
+    ">>>", ">>", "<<",    // shifts (longest first)
+    "\\.\\.\.",           // spread
 
     // number literals
-    "0b[01]+",                           // binary
-    "0x[0-9a-fA-F]+",                    // hex
-    "\\d+(\\.\\d+)?",                    // float
+    "0b[01]+",        // binary
+    "0x[0-9a-fA-F]+", // hex
+    "\\d+(\\.\\d+)?", // float
 
     // identifiers
     "[\\p{L}_][\\p{L}\\d_]*",
@@ -45,7 +48,16 @@ type MatchIterable = IterableIterator<RegExpMatchArray>;
 // the sets for types
 const keywordSet = new Set(["new","const","if","else","while","continue","break","for","in","of","function","return","import","class","extends","inst","internal","try","catch","finally","do","switch","case","default"]);
 const separatorSet = new Set(["\n", ",", "\t", ";"]);
-const operatorSet = new Set(["...", "&&","||","{","}","[","]","!=","<=",">=","==","-=","+=","++","/=","*=","--","+","-","*","/","%","=","(",")",  "&","^","!","<",">","?",":",  "~",".",  ]);
+const operatorSet = new Set([
+    "...", "&&", "||", "{", "}", "[", "]",
+    "!=", "<=", ">=", "==",
+    "-=", "+=", "++", "/=", "*=", "--",
+    "&=", "|=", "^=",
+    "<<=", ">>=", ">>>=",
+    ">>>", ">>", "<<",
+    "+", "-", "*", "/", "%", "=", "(", ")",
+    "&", "^", "!", "<", ">", "?", ":", "~", ".", "|",
+]);
 
 // gets the type of a token.
 function getType(code : string) : string

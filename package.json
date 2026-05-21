@@ -5,8 +5,9 @@
     "description": "A simple programming language built in JavaScript",
     "license": "MIT",
     "files": [
-        "src/core",
-        "src/runtime"
+        "src/core", 
+        "src/runtime",
+        "dist"
     ],
     "bin": {
         "pure-dango": "src/index.ts"

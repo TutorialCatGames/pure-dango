@@ -619,11 +619,32 @@ export function parseFunctionNode(tokens : Tokens, state : State, alreadyConsume
         if (parameter?.value === "...")
         {
             next(tokens, state);   // eat ...
-            const restParam = peek(tokens, state);
-            if (!restParam || restParam.type !== "Identifier")
-                errorTemplate("parseFunctionNode", `expected parameter name after "...", got "${restParam}" at line ${parameter.row}:${parameter.column}`);
+            const restParameter = peek(tokens, state);
+            if (!restParameter || restParameter.type !== "Identifier")
+                errorTemplate("parseFunctionNode", `expected parameter name after "...", got "${restParameter}" at line ${parameter.row}:${parameter.column}`);
 
-            parameters.push({name: next(tokens, state)!.value, default: null, rest: true, typeAnnotation: null});
+            const restName = next(tokens, state)!.value;
+            let restTypeAnnotation: string | null = null;
+            if (peek(tokens, state)?.value === ":" && tokens[state.position + 1]?.type === "Identifier")
+            {
+                next(tokens, state); // eat :
+                let baseType = next(tokens, state)!.value;
+                if (peek(tokens, state)?.value === "<")
+                {
+                    next(tokens, state); // eat 
+                    const union: string[] = [];
+                    while (peek(tokens, state)?.value !== ">")
+                    {
+                        union.push(next(tokens, state)!.value);
+                        if (peek(tokens, state)?.value === ",") next(tokens, state);
+                    }
+                    next(tokens, state); // eat >
+                    baseType = `${baseType}<${union.join(",")}>`;
+                }
+                restTypeAnnotation = baseType;
+            }
+            parameters.push({name: restName, default: null, rest: true, typeAnnotation : restTypeAnnotation});
+
             break; // rest param must be last
         }
 
@@ -642,7 +663,20 @@ export function parseFunctionNode(tokens : Tokens, state : State, alreadyConsume
         if (peek(tokens, state)?.value === ":" && tokens[state.position + 1]?.type === "Identifier")
         {
             next(tokens, state); // eat :
-            parameterTypeAnnotation = next(tokens, state)!.value;
+            let baseType = next(tokens, state)!.value;
+            if (peek(tokens, state)?.value === "<")
+            {
+                next(tokens, state); // eat 
+                const union: string[] = [];
+                while (peek(tokens, state)?.value !== ">")
+                {
+                    union.push(next(tokens, state)!.value);
+                    if (peek(tokens, state)?.value === ",") next(tokens, state);
+                }
+                next(tokens, state); // eat >
+                baseType = `${baseType}<${union.join(",")}>`;
+            }
+            parameterTypeAnnotation = baseType;
         }
 
         if (peek(tokens, state)?.value === "=")

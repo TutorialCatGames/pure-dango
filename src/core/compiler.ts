@@ -828,8 +828,14 @@ const typeMap : TypeMap = new Map([
             bytecode.push(operators.PUSH, 0);
             bytecode.push(operators.STORE, counterVariable);
 
-            // alloc the loop variable
-            bytecode.push(operators.ALLOC, node.left);
+            // alloc the loop variable(s)
+            if (Array.isArray(node.left))
+            {
+                for (const name of node.left)
+                    bytecode.push(operators.ALLOC, name);
+            }
+            else
+                bytecode.push(operators.ALLOC, node.left);
 
             const start : number = bytecode.length;
 
@@ -861,7 +867,22 @@ const typeMap : TypeMap = new Map([
             bytecode.push(operators.ARRGET);
 
             // store in loop variable
-            bytecode.push(operators.STORE, node.left);
+            if (Array.isArray(node.left))
+            {
+                const elementVar = `__elem_${node.row}_${node.column}__`;
+                bytecode.push(operators.ALLOC, elementVar);
+                bytecode.push(operators.STORE, elementVar);
+
+                for (let i = 0; i < node.left.length; i++)
+                {
+                    bytecode.push(operators.LOAD, elementVar);
+                    bytecode.push(operators.PUSH, String(i));
+                    bytecode.push(operators.ARRGET);
+                    bytecode.push(operators.STORE, node.left[i]);
+                }
+            }
+            else
+                bytecode.push(operators.STORE, node.left);
 
             // execute loop body
             node.body.forEach((n : any) => parseObject(n, bytecode));

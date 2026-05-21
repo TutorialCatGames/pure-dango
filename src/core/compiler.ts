@@ -248,9 +248,10 @@ const typeMap : TypeMap = new Map([
                     (parameter: any) => 
                     (
                         {
-                            name    : parameter.name,
-                            rest    : parameter.rest,
-                            default : parameter.default ? parseObject(parameter.default, [], true) : null
+                            name           : parameter.name,
+                            rest           : parameter.rest,
+                            default        : parameter.default ? parseObject(parameter.default, [], true) : null,
+                            typeAnnotation : parameter.typeAnnotation ?? null
                         }
                     )
                 );

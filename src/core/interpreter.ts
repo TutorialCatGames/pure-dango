@@ -1086,7 +1086,13 @@ const commands : Array<Function | undefined> =
         const elements : any[] = [];
 
         for (let i = 0; i < count; i++)
-            elements.unshift(stack.pop());
+        {
+            const value = stack.pop();
+            if (value?.__spread__)
+                elements.unshift(...value.value);
+            else
+                elements.unshift(value);
+        }
 
         stack.push(elements);
     },   // MKARR

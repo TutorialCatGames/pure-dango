@@ -504,13 +504,54 @@ function declareVariable(name: string)         : void  {return currentScope.decl
 function setVariable(name: string, value: any) : void  {isConstant(name); currentScope.set(name, value);}
 function getVariable(name: string)             : any   {return currentScope.get(name);}
 
-function checkParameterType(parameterName : string, typeAnnotation : string | null, value : any) : void
+function checkParameterType(parameterName: string, typeAnnotation: string | null, value: any): void
 {
-    if (!typeAnnotation)
+    if (!typeAnnotation) 
         return;
 
+    // bigint and dfloat are numeric siblings IMO :D
+    const numericCompat = (expected: string, actual: string) =>
+        (expected === "float"  && actual === "bigint") ||
+        (expected === "bigint" && actual === "float");
+
+    // Array<T, ...>
+    const arrayMatch = typeAnnotation.match(/^Array<(.+)>$/);
+    if (arrayMatch)
+    {
+        const allowed = arrayMatch[1].split(",").map(s => s.trim());
+        const valueType = syncFunctions.typeof([], () => "", value);
+        if (!allowed.includes(valueType) && !allowed.some(t => numericCompat(t, valueType)))
+            errorTemplate("checkParameterType", `type mismatch for parameter "${parameterName}", expected one of [${allowed.join(", ")}], got ${valueType}`);
+        
+        return;
+    }
+
+    // Tuple<T, ...>
+    const tupleMatch = typeAnnotation.match(/^Tuple<(.+)>$/);
+    if (tupleMatch)
+    {
+        const expected = tupleMatch[1].split(",").map(s => s.trim());
+        if (!Array.isArray(value))
+        {
+            const valueType = syncFunctions.typeof([], () => "", value);
+            errorTemplate("checkParameterType", `type mismatch for parameter "${parameterName}", expected Tuple, got ${valueType}`);
+        }
+
+        if (value.length !== expected.length)
+            errorTemplate("checkParameterType", `tuple length mismatch for parameter "${parameterName}", expected ${expected.length} elements, got ${value.length}`);
+
+        expected.forEach((type: string, i: number) =>
+        {
+            const elementType = syncFunctions.typeof([], () => "", value[i]);
+            if (elementType !== type && !numericCompat(type, elementType))
+                errorTemplate("checkParameterType", `tuple element ${i} mismatch for parameter "${parameterName}", expected ${type}, got ${elementType}`);
+        });
+
+        return;
+    }
+
     const valueType = syncFunctions.typeof([], () => "", value);
-    if (valueType !== typeAnnotation)
+    if (valueType !== typeAnnotation && !numericCompat(typeAnnotation, valueType))
         errorTemplate("checkParameterType", `type mismatch for parameter "${parameterName}", expected ${typeAnnotation}, got ${valueType}`);
 }
 
@@ -851,7 +892,12 @@ const commands : Array<Function | undefined> =
             if (parameter.rest)
             {
                 declareVariable(parameter.name);
-                setVariable(parameter.name, args.slice(i));
+                
+                const restArguments = args.slice(i);
+                if (parameter.typeAnnotation)
+                    restArguments.forEach((val: any) => checkParameterType(parameter.name, parameter.typeAnnotation, val));
+
+                setVariable(parameter.name, restArguments);
             }
             else
             {
@@ -1193,7 +1239,7 @@ const commands : Array<Function | undefined> =
 
         const classDefinition : any = currentScope.get(className);
         if (!classDefinition || classDefinition.type !== "class")
-            errorTemplate("MKISNT", `"${className}" is not a class`);
+            errorTemplate("MKINST", `"${className}" is not a class`);
 
         const instance : {type : string, methods : Record<string, any>, properties : Record<string, any>, isInstance : boolean, class : string, superclass : any} =
         {
@@ -1236,15 +1282,29 @@ const commands : Array<Function | undefined> =
             (constructor.parameters ?? [])
                 .forEach
                 (
-                    (parameter: any, i: number) =>
+                    (parameter: any, i: number) => 
                     {
-                        declareVariable(parameter.name);
-                        const value = args[i] !== undefined 
-                            ? args[i] 
-                            : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined);
-                        checkParameterType(parameter.name, parameter.typeAnnotation, value);
+                        if (parameter.rest)
+                        {
+                            declareVariable(parameter.name);
+                            
+                            const restArguments = args.slice(i);
+                            if (parameter.typeAnnotation)
+                                restArguments.forEach((value: any) => checkParameterType(parameter.name, parameter.typeAnnotation, value));
 
-                        setVariable(parameter.name, value);
+                            setVariable(parameter.name, restArguments);
+                        }
+                        else
+                        {
+                            declareVariable(parameter.name);
+
+                            const value = args[i] !== undefined
+                                ? args[i]
+                                : (parameter.default !== null ? evaluateDefault(parameter.default) : undefined);
+                            checkParameterType(parameter.name, parameter.typeAnnotation, value);
+                            
+                            setVariable(parameter.name, value);
+                        }
                     }
                 );
 
@@ -1266,8 +1326,8 @@ const commands : Array<Function | undefined> =
             activeBytecode = constructor.bytecode;
             pointer        = 0;
         }
-
-        stack.push(instance);
+        else
+            stack.push(instance); 
     },   // MKINST
 
     (bytecode: Bytecode) : void =>
@@ -1441,7 +1501,12 @@ const commands : Array<Function | undefined> =
                 if (parameter.rest)
                 {
                     declareVariable(parameter.name);
-                    setVariable(parameter.name, args.slice(i));
+
+                    const restArguments = args.slice(i);
+                    if (parameter.typeAnnotation)
+                        restArguments.forEach((val: any) => checkParameterType(parameter.name, parameter.typeAnnotation, val));
+
+                    setVariable(parameter.name, restArguments);
                 }
                 else
                 {

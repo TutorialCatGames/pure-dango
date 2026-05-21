@@ -355,7 +355,7 @@ function commandMapBinaryOperators(
 
         if (left === null || left === undefined || right === null || right === undefined)
         {
-            stack.push(undefined);
+            stack.push(func(left, right));
             return;
         }
         

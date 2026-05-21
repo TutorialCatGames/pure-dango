@@ -3,6 +3,7 @@ import path from "path";
 import {runtimeErrors, utilsErrors} from "../runtime/errors";
 
 import {GF, isGFloat} from "./interpreter"; 
+import {errorTemplate} from "../runtime/stdlib";
 
 type RuntimeState =
 {
@@ -291,7 +292,7 @@ export const bigIntPow = (base: bigint, exponent: bigint) : bigint | any =>
     if (exponent < 0n) 
         return GF(base.toString()).inner.pow(GF(exponent.toString()));
     if (exponent === 0n && base === 0n) 
-        throw new EvalError(`0n raised to 0n can't be evaluated`);
+        errorTemplate("bigIntPow", `0n raised to 0n can't be evaluated`);
     if (exponent === 0n) 
         return 1n;
 

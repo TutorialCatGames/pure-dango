@@ -1,0 +1,93 @@
+class gambling
+{
+    constructor(...args : Tuple<string, float>)
+    {
+        this.__INIT__ = {};
+
+        for (new pair of args)
+            this.addItem(pair[0], pair[1]);
+    }
+
+    addItem(name : string, rarity : float) : void
+        this.__INIT__[name] = rarity;
+
+    removeItem(name : string) : void
+        this.__INIT__[name] = null;
+
+    editItem(name : string, newLuck : float) : void
+        this.__INIT__[name] = newLuck;
+
+    roll() : string
+    {
+        new items = [];
+        new weights = [];
+
+        new itemKeys = keys(this.__INIT__);
+        for (new name of itemKeys)
+        {
+            new luck = this.__INIT__[name];
+            if (luck != null && luck != undefined)
+            {
+                push(items, name);
+                push(weights, luck);
+            }
+        }
+
+        if (len(items) == 0)
+            return null;
+
+        new total = 0;
+        for (new weight of weights)
+            total += weight;
+
+        new roll = random(0, total);
+
+        new cumulative = 0;
+        new i = 0;
+        for (new weight of weights)
+        {
+            cumulative += weight;
+            if (roll <= cumulative)
+                return items[i];
+
+            i += 1;
+        }
+
+        return items[len(items) - 1];
+    }
+}
+
+new a = inst gambling( 
+    ["stone", 2], 
+    ["rock", 1.5],
+    ["bread", 1],
+    ["water", 0.8],
+    
+    ["coral, the emperor", 0.5], 
+    ["vile, the soldier of death", 0.35],
+    ["frant, the fallen emperor", 0.3],
+    
+    ["tesla, creator of AC current", 0.3],
+    ["einstein, sage of theories", 0.2], 
+    ["newton, holder of the apple", 0.1],
+
+    ["cass, holder of money", 0.08], # on a side note he killed frant, not like it's better than money
+
+    ["kilnit, emperor of emperors", 0.07],   # proved his strength by defeating all emeprors. This guy is SO arrogant though.
+    ["cornelius, god of emperors", 0.01],    # protects emperors as an emperor god, even the emperor of emperors bow down to him. Completely immortal. 
+    ["forthhalt, death of emperors", 0.008], # DESPISES emperors. This guy HATES cornelius and unfortunately is immortal like cornelius
+);
+
+new i = 0;
+new results = {};
+
+while (i < 1000)
+{
+    new result = a.roll();
+    if (results[result] == undefined)
+        results[result] = 0;
+    results[result] += 1;
+    i += 1;
+}
+
+print(results);

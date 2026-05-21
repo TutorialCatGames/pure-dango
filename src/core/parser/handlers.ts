@@ -370,6 +370,54 @@ export function forHandler(ast : AST, token : BaseToken, tokens : Tokens, state 
         variableToken = peek(tokens, state);
     }
 
+    if (variableToken?.value === "[")
+    {
+        next(tokens, state); // consume [
+        const names: string[] = [];
+        while (peek(tokens, state)?.value !== "]")
+        {
+            const nextToken = next(tokens, state)!;
+            if (nextToken.type !== "Identifier")
+                errorTemplate("forHandler", `expected identifier in destructure pattern, got "${nextToken.value}" at line ${row}:${column}`);
+            names.push(nextToken.value);
+
+            if (peek(tokens, state)?.value === ",")
+                next(tokens, state);
+        }
+        next(tokens, state); // consume ]
+
+        const nextToken = peek(tokens, state);
+        if (nextToken?.type === "Keyword" && nextToken.value === "of")
+        {
+            next(tokens, state); // consume of
+            const iterable = parseExpression(tokens, 0, state)!;
+
+            if (!peek(tokens, state) || peek(tokens, state).value !== ")")
+                throw new parseErrors.MissingTokenError(")", row, column);
+            next(tokens, state);
+
+            let body: ParserToken[];
+            const openingBracket = peek(tokens, state);
+            if (openingBracket?.value === "{")
+                body = parseBlock(tokens, state);
+            else
+                body = parseNextToken(tokens, state);
+
+            ast.body.push(
+                {
+                    type          : "ForOfStatement",
+                    left          : names,
+                    right         : iterable,
+                    body,
+                    isDeclaration : true,
+                    row,
+                    column
+                }
+            );
+            return true;
+        }
+    }
+
     if (variableToken?.type === "Identifier")
     {
         variableName = variableToken.value;

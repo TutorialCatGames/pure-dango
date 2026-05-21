@@ -1675,7 +1675,7 @@ const commands : Array<Function | undefined> =
     ),   // USHR
 ];
 
-const asyncOpcodes = new Set([5, 10, 13, 26, 35, 37]);
+const asyncOpcodes = new Set([5, 10, 13, 26, 33, 35, 37]);
 export async function interpret(
     bytecode  : Bytecode,
     baseDir   : string = process.cwd(),

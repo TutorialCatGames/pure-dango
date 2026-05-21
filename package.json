@@ -1,11 +1,11 @@
 {
     "name": "pure-dango",
-    "version": "1.8.1",
+    "version": "1.8.2",
     "type": "module",
     "description": "A simple programming language built in JavaScript",
     "license": "MIT",
     "files": [
-        "src/core", 
+        "src/core",
         "src/runtime",
         "dist"
     ],

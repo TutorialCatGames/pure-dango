@@ -18,7 +18,7 @@
         "dev": "tsx src/index.ts",
         "prebuild": "node src/scripts/libs.cjs",
         "build": "node src/scripts/build.js",
-        "build:lib": "esbuild src/core/tokenizer/tokenizer.ts --bundle=false --format=cjs --outfile=dist/lib/tokenizer.js --platform=node && esbuild src/core/parser/main.ts --bundle=false --format=cjs --outfile=dist/lib/main.js --platform=node"
+        "build:lib": "esbuild src/core/tokenizer/tokenizer.ts --bundle=false --format=cjs --outfile=dist/lib/tokenizer.cjs --platform=node && esbuild src/core/parser/main.ts --bundle=false --format=cjs --outfile=dist/lib/main.cjs --platform=node"
     },
     "dependencies": {
         "gmp-wasm": "^1.3.2"
@@ -52,7 +52,7 @@
     "main": "./dist/PureDango.cjs",
     "exports": {
         ".": "./dist/PureDango.cjs",
-        "./src/core/tokenizer/tokenizer.js": "./dist/lib/tokenizer.js",
-        "./src/core/parser/main.js": "./dist/lib/main.js"
+        "./src/core/tokenizer/tokenizer.js": "./dist/lib/tokenizer.cjs",
+        "./src/core/parser/main.js": "./dist/lib/main.cjs"
     }
 }

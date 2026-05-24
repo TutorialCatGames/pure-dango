@@ -146,6 +146,7 @@ const operators : Record<string, number> = Object.freeze({
     SHL:        47,   // <<
     SHR:        48,   // >>
     USHR:       49,   // >>>
+    JNU:        50,   // jump if null or undefined
 })
 
 const binaryOperators : Record<string, number> = Object.freeze({
@@ -365,7 +366,7 @@ const typeMap : TypeMap = new Map([
                 bytecode.push(operators.LOAD,  tempName);
 
                 const jumpIfNull : number = bytecode.length;
-                bytecode.push(operators.JZ, 0); // if null/undefined, go to right
+                bytecode.push(operators.JNU, 0); // if null/undefined, go to right
 
                 bytecode.push(operators.LOAD, tempName);
                 const jumpToEnd : number = bytecode.length;

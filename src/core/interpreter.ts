@@ -1673,6 +1673,17 @@ const commands : Array<Function | undefined> =
         ()            => errorTemplate(`USHR`, "bitwise USHR not supported on floats"),
         "bitwise"
     ),   // USHR
+
+    (bytecode: Bytecode) : void =>
+    {
+        const target : any = next(bytecode);
+        if (typeof target !== "number")
+            throw new runtimeErrors.InternalError(`target after opcode 50 (JNU) should be type "Number" but got "${target}"`);
+
+        const value : any = stack.pop();
+        if (value === null || value === undefined) 
+            pointer = target;
+    },   // JNU
 ];
 
 const asyncOpcodes = new Set([5, 10, 13, 26, 33, 35, 37]);

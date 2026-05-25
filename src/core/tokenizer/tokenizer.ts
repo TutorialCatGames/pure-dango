@@ -7,19 +7,19 @@ const REGEX = new RegExp([
     "(`(?:[^`\\\\]|\\\\.)*`)", // backtick strings
     "('(?:[^'\\\\]|\\\\.)*')", // single quote strings
 
-    '(\u201C(?:[^\u201C\u201D\\\\]|\\\\.)*\u201D)', // curly single quote strings
-    "(\u2018(?:[^\u2018\u2019\\\\]|\\\\.)*\u2019)", // curly double quote strings
+    '(\u201C(?:[^\u201C\u201D\\\\]|\\\\.)*\u201D)', // curly double quote strings
+    "(\u2018(?:[^\u2018\u2019\\\\]|\\\\.)*\u2019)", // curly single quote strings
 
     // multi-char operators
     "\\?\\?",
     "&&", "\\|\\|",
     "!=", "<=", ">=", "==",
     "--", "\\+\\+",
-    "-=", "\\+=", "/=", "\\*=",
+    "-=", "\\+=", "/=", "\\*=", "%=",
     "&=", "\\|=", "\\^=", // bitwise assignment
     "<<=", ">>=", ">>>=", // shift assignment
     ">>>", ">>", "<<",    // shifts (longest first)
-    "\\.\\.\.",           // spread
+    "\\.\\.\\.",          // spread
 
     // number literals
     "0b[01]+",        // binary
@@ -30,7 +30,7 @@ const REGEX = new RegExp([
     "[\\p{L}_][\\p{L}\\d_]*",
 
     // single char
-    "[+\\-*/=()&^%$#@!<>?:~,|]",
+    "[+\\-*/=()&|^%$#@!<>?:~,]",
     "[\\[\\]{}]",
     "[\\n;]",
     "\\.",

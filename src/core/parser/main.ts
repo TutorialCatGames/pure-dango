@@ -23,6 +23,7 @@ export const OPERATORS : Operators =
     "+=": {prec: 5, assoc: "right", type: "assignment"},
     "*=": {prec: 5, assoc: "right", type: "assignment"},
     "/=": {prec: 5, assoc: "right", type: "assignment"},
+    "%=": {prec: 5, assoc: "right", type: "assignment"},
 
     // equality operators
     "==": {prec: 7, assoc: "left", type: "binary"},

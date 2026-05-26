@@ -428,15 +428,13 @@ export class GFloat
 
 export class Scope
 {
-    variables : Map<string, any>;
     slotMap   : Map<string, number>;
     slots     : any[];
     parent    : Scope | undefined;
 
     constructor(parent : Scope | undefined = undefined)
     {
-        this.variables    =  new Map();
-        this.slotMap      =  new Map();   // fast lookup
+        this.slotMap      =  new Map();
         this.slots        =  [];
         this.parent       =  parent;
 
@@ -458,15 +456,12 @@ export class Scope
 
     declare(name: string) : void
     {
-        if (this.variables.has(name)) 
+        if (this.slotMap.has(name)) 
             errorTemplate(`declare`, `identifier "${name}" has already been declared in this scope`);
 
         const slotIndex = this.slots.length;
-
-        this.slots.push(undefined);   // push the default value
+        this.slots.push(undefined);
         this.slotMap.set(name, slotIndex);
-        
-        this.variables.set(name, undefined);
     }
 
     get(name: string) : any
@@ -518,7 +513,7 @@ function checkParameterType(parameterName: string, typeAnnotation: string | null
     const arrayMatch = typeAnnotation.match(/^Array<(.+)>$/);
     if (arrayMatch)
     {
-        const allowed = arrayMatch[1].split(",").map(s => s.trim());
+        const allowed = arrayMatch[1].split(",").map(string => string.trim());
         const valueType = syncFunctions.typeof([], () => "", value);
         if (!allowed.includes(valueType) && !allowed.some(t => numericCompat(t, valueType)))
             errorTemplate("checkParameterType", `type mismatch for parameter "${parameterName}", expected one of [${allowed.join(", ")}], got ${valueType}`);
@@ -530,7 +525,7 @@ function checkParameterType(parameterName: string, typeAnnotation: string | null
     const tupleMatch = typeAnnotation.match(/^Tuple<(.+)>$/);
     if (tupleMatch)
     {
-        const expected = tupleMatch[1].split(",").map(s => s.trim());
+        const expected = tupleMatch[1].split(",").map(string => string.trim());
         if (!Array.isArray(value))
         {
             const valueType = syncFunctions.typeof([], () => "", value);
@@ -693,11 +688,10 @@ const commands : Array<Function | undefined> =
         "arithmetic"
     ), // MOD
 
-    async (bytecode : Bytecode) : Promise<void> =>
+    (bytecode : Bytecode) : void =>
     {
         const callLine   : number = line;
         const callColumn : number = column;
-
         let rawNextBytecode = next(bytecode);
         if (typeof rawNextBytecode !== "string") 
             errorTemplate("CALL", `the name of a function must be a String, got "${rawNextBytecode}"`);
@@ -806,13 +800,16 @@ const commands : Array<Function | undefined> =
         func = asyncFunctions[functionName as keyof typeof asyncFunctions];
         if (func)
         {
-            const result = await func(stack, getTrueValue, ...args);
-
-            if (result !== undefined) 
-                stack.push(result);
-            else
-                stack.push(undefined);
-
+            const capturedFunc = func;
+            const capturedArgs = args;
+            pendingAsyncCall = async () =>
+            {
+                const result = await capturedFunc(stack, getTrueValue, ...capturedArgs);
+                if (result !== undefined)
+                    stack.push(result);
+                else
+                    stack.push(undefined);
+            };
             return;
         }
 
@@ -1005,7 +1002,7 @@ const commands : Array<Function | undefined> =
         throw new runtimeErrors.InternalError(`found opcode 25 (RETURN) that wasn't handled by opcode 10 (CALL)`);
     },   // RETURN (handled in CALL/opcode 10)
 
-    async () : Promise<void> =>
+    () : void =>
     {
         let absolutePath : any = stack.pop();
         if (typeof absolutePath !== "string") 
@@ -1234,7 +1231,7 @@ const commands : Array<Function | undefined> =
         stack.push(classObject);
     },   // MKCLASS
 
-    async (bytecode : Bytecode) : Promise<void> =>
+    (bytecode : Bytecode) : void =>
     {
         const className     : any = next(bytecode);
         const argumentCount : any = next(bytecode);
@@ -1361,7 +1358,7 @@ const commands : Array<Function | undefined> =
         )
     },   // SPREAD
     
-    async (bytecode: Bytecode) : Promise<void> =>
+    (bytecode: Bytecode) : void =>
     {
         const argumentCount : number = next(bytecode) as number;
 
@@ -1686,7 +1683,11 @@ const commands : Array<Function | undefined> =
     },   // JNU
 ];
 
-const asyncOpcodes = new Set([5, 10, 13, 26, 33, 35, 37]);
+// only CALL (opcode 10) can actually be async - when it hits an async stdlib function
+const asyncOpcodes = new Set([10]);
+
+let pendingAsyncCall : (() => Promise<any>) | null = null;
+
 export async function interpret(
     bytecode  : Bytecode,
     baseDir   : string = process.cwd(),
@@ -1859,11 +1860,15 @@ export async function interpret(
                 const command = commands[operator];
                 if (command === undefined)
                     throw new runtimeErrors.InternalError(`unknown operator code: "${operator}"`);
- 
-                if (asyncOpcodes.has(operator))
-                    await command(activeBytecode);
-                else
-                    command(activeBytecode);
+
+                command(activeBytecode);
+
+                if (pendingAsyncCall)
+                {
+                    const call = pendingAsyncCall;
+                    pendingAsyncCall = null;
+                    await call();
+                }
  
                 if (++steps % 1_000_000 === 0)
                     await new Promise(setImmediate);

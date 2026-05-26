@@ -17,14 +17,6 @@ export class Tokenizer extends GeneralError
 }
 
 // runtime errors
-class ConstantAssignmentOperator extends GeneralError
-{
-    constructor(variableName : string)
-    {
-        super(`ConstantAssignmentOperator`, `assignment to a constant "${variableName}"`);
-    }
-}
-
 class FunctionError extends GeneralError
 {
     constructor(functionName : string) 
@@ -108,7 +100,6 @@ class ClassError extends GeneralError
 export const runtimeErrors =
 {
     FunctionError,
-    ConstantAssignmentOperator,
     BreakError,
     ContinueError,
     StackError,

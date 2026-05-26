@@ -92,10 +92,10 @@ class ClassError extends GeneralError
 export const runtimeErrors =
 {
     FunctionError,
-    BreakError,
-    ContinueError,
     StackError,
     MissingStackTokenError,
+    BreakError,
+    ContinueError,
     DivisionByZero,
     InternalError,
     MethodError,

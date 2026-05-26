@@ -81,14 +81,6 @@ class MethodError extends GeneralError
     }
 }
 
-class PropertyError extends GeneralError
-{
-    constructor(methodName: string)
-    {
-        super("PropertyError", `property "${methodName}" does not exist`);
-    }
-}
-
 class ClassError extends GeneralError
 {
     constructor(className: string)
@@ -107,7 +99,6 @@ export const runtimeErrors =
     DivisionByZero,
     InternalError,
     MethodError,
-    PropertyError,
     ClassError
 }
 

@@ -643,7 +643,7 @@ function runHot(bc : Bytecode) : boolean
             {
                 const v = bc[p++];
                 if (typeof v !== "string") {stack.push(v); break;}
-                if (/^[0-9]+$/.test(v))    {stack.push(BigInt(v)); true;}
+                if (/^[0-9]+$/.test(v))    {stack.push(BigInt(v)); break;}
                 if (/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(v.trim()) && !isNaN(Number(v)))
                 {
                     stack.push(GF(v));
@@ -851,7 +851,7 @@ function runHot(bc : Bytecode) : boolean
             case 29:
                 commands[29]!(bc); // complex enough
                 break;
-            //   ARRSET
+            //   ARRGET
             case 30: 
                 commands[30]!(bc);
                 break;

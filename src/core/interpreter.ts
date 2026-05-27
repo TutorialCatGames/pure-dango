@@ -4,12 +4,12 @@ import {init}  from "gmp-wasm";
 
 import {parser}         from "./parser/main";
 import {buildBytecode}  from "./compiler";
-import {tokenizer}      from "./tokenizer/tokenizer";
+import {tokenizer}      from "./lexer/main";
 
 import {constants, isConstant}    from "../runtime/globals";
 import {runtimeErrors} from "../runtime/errors";
 
-import {syncFunctions, asyncFunctions, errorTemplate} from "../runtime/stdlib";
+import {syncFunctions, asyncFunctions, syncIOFunctions, errorTemplate} from "../runtime/stdlib";
 
 import {loadBytecode, saveBytecode} from "./utils";
 
@@ -585,6 +585,414 @@ export const getBaseDir = () => currentBaseDir;
 
 const importedFiles = new Set();   // used for opcode 26
 
+// hot function JIT
+const hotCallCount  = new WeakMap<Bytecode, number>();
+const HOT_THRESHOLD = 30;
+
+// inline binary operator helper used by runHot
+function hotBinaryOperator(
+    func    : (l : any, r : any) => any,
+    gmpFunc : (l : any, r : any) => any,
+    type : string
+)
+{
+    const r = stack.pop()
+    const l = stack.pop();
+
+    if (typeof l === "bigint" && typeof r === "bigint")
+    {
+        stack.push(func(l, r));
+        return;
+    }
+
+    if (isGFloat(l) && isGFloat(r))
+    {
+        stack.push(gmpFunc(l, r));
+        return;
+    }
+
+    stack.push(l);
+    stack.push(r);
+
+    const [left, right] = BinaryOperator(type);
+    if (left === null || left === undefined || right === null || right === undefined)
+    {
+        stack.push(func(left, right));
+        return;
+    }
+
+    stack.push(isGFloat(left) || isGFloat(right) ? gmpFunc(left, right) : func(left, right));
+}
+
+/*
+    short var names
+    tight switch-based
+*/
+function runHot(bc : Bytecode) : boolean
+{   
+    let p = 0;
+    const len = bc.length;
+
+    while (p < len)
+    {
+        const operator = bc[p++];
+
+        switch (operator)
+        {
+            case 1:
+            {
+                const v = bc[p++];
+                if (typeof v !== "string") {stack.push(v); break;}
+                if (/^[0-9]+$/.test(v))    {stack.push(BigInt(v)); true;}
+                if (/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(v.trim()) && !isNaN(Number(v)))
+                {
+                    stack.push(GF(v));
+                    break;
+                }
+
+                stack.push(v);
+                break;
+            } //   PUSH
+
+            case 2: 
+            {
+                const name = bc[p++] as string;
+                const slot = currentScope.slotMap.get(name);
+                const res  = slot !== undefined ? currentScope.slots[slot] : getVariable(name);
+                stack.push(typeof res === "number"
+                    ? (String(res).includes(".") ? GF(res) : BigInt(res))
+                    : res);
+                break;
+            } //   LOAD
+
+            case 3:
+            {
+                const name  = bc[p++] as string;
+                const value = stack.pop();
+
+                if (constants[name]) 
+                    errorTemplate("STORE", `cannot reassign constant "${name}"`);
+                
+                const slot = currentScope.slotMap.get(name);
+                if (slot !== undefined) 
+                    currentScope.slots[slot] = value;
+                else 
+                    setVariable(name, value);
+                break;
+            }
+            case 4: 
+                declareVariable(bc[p++] as string);
+                break;
+            //   ALLOC
+
+            case 5:  
+                hotBinaryOperator((l, r) => BigInt(l) + BigInt(r), (l, r) => new GFloat(l.inner.add(r.inner)), "arithmetic");
+                break;
+            //   ADD
+            case 6:
+                hotBinaryOperator((l, r) => BigInt(l) - BigInt(r), (l, r) => new GFloat(l.inner.sub(r.inner)), "arithmetic");
+                break;
+            //   SUB
+            case 7:
+                hotBinaryOperator((l, r) => BigInt(l) * BigInt(r), (l, r) => new GFloat(l.inner.mul(r.inner)), "arithmetic");
+                break;
+            //   MUL
+            case 8:
+                hotBinaryOperator(
+                    (l, r) => 
+                    {
+                        if(r === 0n)
+                            throw new runtimeErrors.DivisionByZero(l,r);
+                        
+                        return BigInt(l)/BigInt(r); 
+                    },
+                    (l, r) => 
+                    {
+                        if (r.inner.isZero())
+                            throw new runtimeErrors.DivisionByZero(l,r);
+
+                        return new GFloat(l.inner.div(r.inner));
+                    },
+                    "arithmetic"
+                );
+                break;
+            //   DIV
+            case 9:
+                hotBinaryOperator((l, r) => BigInt(l) % BigInt(r), (l, r) => new GFloat(l.inner.fmod(r.inner)), "arithmetic");
+                break;
+            //   MOD
+
+            case 10:
+            case 26:
+            case 33:
+            case 37:
+                // restore pointer so main loop can handle this opcode
+                pointer = p - 1;
+                activeBytecode = bc;
+                return false;
+            //   CALL/EXEC/MKINST/CALLMETHOD - fall back to main loop
+
+            case 11:
+            {
+                let v = unwrapInstance(stack.pop());
+                if (isGFloat(v)) 
+                {
+                    simpleStack(new GFloat(v.inner.neg())); 
+                    break;
+                }
+                
+                simpleStack(-v);
+                break;
+            } //   NEG
+            case 12:
+            {
+                let v = unwrapInstance(stack.pop());
+                if (isGFloat(v)) 
+                    v = v.inner.isZero();
+                
+                stack.push(v);
+                break;
+            } //   NOT
+            case 13:
+            {
+                let v = unwrapInstance(stack.pop());
+                if (isGFloat(v))
+                    v = BigInt(v.inner.toFixed(0));
+                
+                simpleStack(~v);
+                break;
+            } //   BITNOT
+
+            case 14: 
+                p = bc[p] as number;
+                break;
+            //   JMP
+            case 15: 
+            {
+                const target = bc[p++] as number;
+                const raw    = stack.pop();
+                const val    = getTrueValue(raw);
+                if (!val || val === "undefined" || val === "null") 
+                    p = target;
+                
+                break;
+            } //   JZ
+
+            case 16: 
+                hotBinaryOperator((l, r) => l === r, (l, r) => l.inner.isEqual(r.inner),        "comparison"); 
+                break;
+            //   EQ
+            case 17: 
+                hotBinaryOperator((l, r) => l !== r, (l, r) => !l.inner.isEqual(r.inner),       "comparison"); 
+                break;
+            //   NE
+            case 18: 
+                hotBinaryOperator((l, r) => l > r,   (l, r) => l.inner.greaterThan(r.inner),    "comparison"); 
+                break;
+            //   GT
+            case 19: 
+                hotBinaryOperator((l, r) => l < r,   (l, r) => l.inner.lessThan(r.inner),       "comparison"); 
+                break;
+            //   LT
+            case 20: 
+                hotBinaryOperator((l, r) => l >= r,  (l, r) => l.inner.greaterOrEqual(r.inner), "comparison"); 
+                break;
+            //   GTE
+            case 21: 
+                hotBinaryOperator((l, r) => l <= r,  (l, r) => l.inner.lessOrEqual(r.inner),    "comparison"); 
+                break;
+            //   LTE
+
+            case 22:
+                if (stack.length === 0) 
+                    throw new runtimeErrors.StackError();
+                stack.pop();
+
+                break;
+            //   POP
+
+            case 23: pushScope();
+                break; 
+            //   PUSHSCP
+            case 24: popScope();
+                break; 
+            //   POPSCP
+            
+            case 25:
+                pointer = bc.length;   // triggers frame-pop on next main loop iteration
+                activeBytecode = bc;
+                return false;
+            //   RETURN
+
+            case 27: 
+            {
+                const tmpl = stack.pop();
+                stack.push({...tmpl, closureScope: currentScope, definedFile: file});
+                break;
+            } //   MKFUNC
+            case 28:
+            {
+                const count = bc[p++] as number;
+                const elems : any[] = [];
+
+                for (let i = 0; i < count; i++)
+                {
+                    const v = stack.pop();
+                    if (v?.__spread__) 
+                        elems.unshift(...v.value);
+                    else 
+                        elems.unshift(v);
+                }
+
+                stack.push(elems);
+                break;
+            } //   MKARR
+
+            case 29:
+                commands[29]!(bc); // complex enough
+                break;
+            //   ARRSET
+            case 30: 
+                commands[30]!(bc);
+                break;
+            //   ARRSET
+
+            case 31: 
+            {
+                const count = bc[p++] as number;
+                const obj: Record<string,any> = { type: "object", value: {} };
+                for (let i = 0; i < count; i++)
+                {
+                    const v = stack.pop();
+                    const k = stack.pop();
+                    obj.value[String(k)] = v;
+                }
+                stack.push(obj);
+                break;
+            } //   MKOBJ
+            case 32:
+            {
+                const desc = stack.pop();
+                stack.push({ type: "class", name: desc.name, superclass: desc.superclass, methods: desc.methods });
+                break;
+            } //   MKCLASS
+
+            case 34:
+                line   = bc[p++] as number;
+                column = bc[p++] as number;
+                break;
+            //   SETLINE
+            case 35:
+                file = bc[p++] as string;
+                break;
+            //   SETFILE
+
+            case 36:
+            {
+                const arr = getTrueValue(stack.pop());
+                
+                if (!Array.isArray(arr)) 
+                    errorTemplate("SPREAD", `spread operator can only be used on arrays`);
+                
+                stack.push({ __spread__: true, value: arr });
+                break;
+            } //   SPREAD
+
+            case 38:
+            {
+                const catchPos   = bc[p++];
+                const finallyPos = bc[p++];
+
+                tryStack.push(
+                    {
+                        catchPosition: catchPos as number, finallyPosition: finallyPos as number,
+                        savedPointer: p, savedBytecode: bc,
+                        savedScope: currentScope, savedStack: [...stack],
+                        savedCallStack: [...callStack], catchExecuted: false,
+                        file, line, column
+                    }
+                );
+
+                break;
+            } //   TRY
+            case 39: 
+                commands[39]!([]);  
+                break; 
+            //   ENDTRY
+
+            case 40: 
+                commands[40]!([]);  
+                break; 
+            //   OBJKEYS
+            case 41: 
+                commands[41]!([]);
+                break; 
+            //   ARRLEN
+
+            case 42:
+            {
+                const name  = bc[p++] as string;
+                const value = stack.pop();
+                
+                declareVariable(name);
+                setVariable(name, value);
+                
+                constants[name] = true;
+                break;
+            } //   ALLOCCONST
+
+            case 43:
+            {
+                const varName  = bc[p++] as string;
+                const expType  = bc[p++] as string;
+                const val      = stack[stack.length - 1];
+                const valType  = syncFunctions.typeof([], () => "", val);
+                
+                if (valType !== expType)
+                    errorTemplate("TYPECHECK", `type mismatch for "${varName}", expected ${expType}, got ${valType}`);
+                
+                break;
+            } //   TYPECHECK
+
+            case 44: 
+                hotBinaryOperator((l, r)=> BigInt(l) &  BigInt(r), () => errorTemplate("AND","bitwise AND not supported on floats"),  "bitwise"); 
+                break;
+            case 45: 
+                hotBinaryOperator((l, r)=> BigInt(l) |  BigInt(r), () => errorTemplate("OR","bitwise OR not supported on floats"),    "bitwise"); 
+                break;
+            case 46: 
+                hotBinaryOperator((l, r)=> BigInt(l) ^  BigInt(r), () => errorTemplate("XOR","bitwise XOR not supported on floats"),  "bitwise"); 
+                break;
+            case 47: 
+                hotBinaryOperator((l, r)=> BigInt(l) << BigInt(r), () => errorTemplate("SHL","bitwise SHL not supported on floats"),  "bitwise"); 
+                break;
+            case 48: 
+                hotBinaryOperator((l, r)=> BigInt(l) >> BigInt(r), () => errorTemplate("SHR","bitwise SHR not supported on floats"),  "bitwise"); 
+                break;
+            case 49: 
+                hotBinaryOperator((l, r)=> BigInt(l) >> BigInt(r) & 0xFFFFFFFFFFFFFFFFn, () => errorTemplate("USHR","bitwise USHR not supported on floats"), "bitwise"); 
+                break;
+            
+                
+            case 50:
+            {
+                const target = bc[p++] as number;
+                const val    = stack.pop();
+                if (val === null || val === undefined) p = target;
+                break;
+            } //   JNU
+
+            default:
+                // unknown operator - fall back
+                pointer = p - 1;
+                activeBytecode = bc;
+                return false;
+        }
+    }
+
+    return true;
+}
+
 const commands : Array<Function | undefined> =
 [
     undefined,
@@ -592,10 +1000,22 @@ const commands : Array<Function | undefined> =
     (bytecode : Bytecode) : void =>
     {
         let value : any = next(bytecode);
+
+        if (typeof value !== "string")
+        {
+            if (value === undefined && pointer > activeBytecode.length)
+                throw new runtimeErrors.MissingStackTokenError("PUSH");
+            
+            stack.push(value);
+
+            return;
+        }
+
         if (typeof value === "string" && /^[0-9]+$/.test(value))
         {
             value = BigInt(value);
             stack.push(value);
+
             return;
         }
 
@@ -797,19 +1217,16 @@ const commands : Array<Function | undefined> =
             return;
         }
 
-        func = asyncFunctions[functionName as keyof typeof asyncFunctions];
+        func = syncIOFunctions[functionName as keyof typeof asyncFunctions];
         if (func)
         {
-            const capturedFunc = func;
-            const capturedArgs = args;
-            pendingAsyncCall = async () =>
-            {
-                const result = await capturedFunc(stack, getTrueValue, ...capturedArgs);
-                if (result !== undefined)
-                    stack.push(result);
-                else
-                    stack.push(undefined);
-            };
+            const result = func(stack, getTrueValue, ...args);
+
+            if (result !== undefined)
+                stack.push(result);
+            else
+                stack.push(undefined);
+
             return;
         }
 
@@ -927,7 +1344,12 @@ const commands : Array<Function | undefined> =
 
         if (functionObject.definedFile)
             file = functionObject.definedFile;
-        activeBytecode = functionObject.bytecode;
+
+        // hot function tracking
+        const bc = functionObject.bytecode;
+        hotCallCount.set(bc, (hotCallCount.get(bc) ?? 0) + 1);
+
+        activeBytecode = bc;
         pointer        = 0;
     },   // CALL
 
@@ -1683,11 +2105,6 @@ const commands : Array<Function | undefined> =
     },   // JNU
 ];
 
-// only CALL (opcode 10) can actually be async - when it hits an async stdlib function
-const asyncOpcodes = new Set([10]);
-
-let pendingAsyncCall : (() => Promise<any>) | null = null;
-
 export async function interpret(
     bytecode  : Bytecode,
     baseDir   : string = process.cwd(),
@@ -1861,20 +2278,46 @@ export async function interpret(
                 if (command === undefined)
                     throw new runtimeErrors.InternalError(`unknown operator code: "${operator}"`);
 
+                const prevBytecode = activeBytecode;
                 command(activeBytecode);
 
-                if (pendingAsyncCall)
+                // after CALL, activeBytecode is now the callee's bytecode
+                if (operator === 10 && activeBytecode !== prevBytecode)
                 {
-                    const call = pendingAsyncCall;
-                    pendingAsyncCall = null;
-                    await call();
+                    const calleeBc = activeBytecode;
+                    const count = hotCallCount.get(calleeBc) ?? 0;
+
+                    if (count >= HOT_THRESHOLD)
+                    {
+                        pointer = 0;
+                        const completed = runHot(calleeBc);
+
+                        if (completed)
+                        {
+                            // runHot ran to end without hitting a complex op - pop the frame
+                            if (callStack.length > 0)
+                            {
+                                const frame: any = callStack.pop();
+
+                                if (frame.returnType && frame.returnMode !== "constructor" && frame.returnMode !== "super")
+                                    checkReturnType(frame.functionName, frame.returnType, stack[stack.length - 1]);
+
+                                activeBytecode = frame.bytecode;
+                                pointer        = frame.pointer;
+                                currentScope   = frame.savedScope;
+                                file           = frame.file;
+                            }
+                        }
+
+                        // else, runHot bailed early, pointer/activeBytecode already restored, main loop continues
+                    }
                 }
- 
-                if (++steps % 1_000_000 === 0)
+
+                if ((++steps & 0x3FFFFF) === 0) 
                     await new Promise(setImmediate);
             }
  
-            break;   // clean exit from inner while(true) — we're done
+            break;   // clean exit from inner while(true)
         }
         catch (error: any)
         {
@@ -2035,12 +2478,7 @@ export async function executeInCurrentContext(code : string, isolateScope : bool
         }
 
         if (typeof operator === "number" && commands[operator])
-        {
-            if (asyncOpcodes.has(operator))
-                await commands[operator](activeBytecode);
-            else
-                commands[operator](activeBytecode);
-        }
+            commands[operator](activeBytecode);
     }
     
     const result = stack.length > 0 

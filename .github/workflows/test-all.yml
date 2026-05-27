@@ -75,4 +75,4 @@ jobs:
         run: node src/scripts/build.js
 
       - name: Test pure-dango
-        run: dist\PureDangoLauncher.exe run docs\answer_keys\test.pds
+        run: dist\PureDangoLauncher-win.exe run docs\answer_keys\test.pds

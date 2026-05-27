@@ -23,7 +23,7 @@ REM rebuild
 if "%1"=="-r"     goto rebuild
 
 REM use executable
-"%~dp0..\dist\PureDangoLauncher.exe" run "%~1"
+"%~dp0..\dist\PureDangoLauncher-win.exe" run "%~1"
 call :check_updates
 goto :eof
 
@@ -219,7 +219,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-"%~dp0..\dist\PureDangoLauncher.exe" run "%~2"
+"%~dp0..\dist\PureDangoLauncher-win.exe" run "%~2"
 call :check_updates
 pause
 goto :eof

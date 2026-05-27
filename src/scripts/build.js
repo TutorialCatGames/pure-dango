@@ -57,7 +57,7 @@ if (buildAll)
         fs.renameSync(path.join(distDir, "PureDango-linux-arm64"), path.join(distDir, "PureDangoLauncher-linux-arm64"));
     
     if (fs.existsSync(path.join(distDir, "PureDango-win-x64.exe")))
-        fs.renameSync(path.join(distDir, "PureDango-win-x64.exe"), path.join(distDir, "PureDangoLauncher.exe"));
+        fs.renameSync(path.join(distDir, "PureDango-win-x64.exe"), path.join(distDir, "PureDangoLauncher-win.exe"));
 }
 else 
 {
@@ -67,7 +67,7 @@ else
     if (platform === "win32") 
     {
         target = targets.find(t => t.includes("win")) || "node22-win-x64";
-        outputName = "PureDangoLauncher.exe";
+        outputName = "PureDangoLauncher-win.exe";
     } 
     else if (platform === "darwin") 
     {

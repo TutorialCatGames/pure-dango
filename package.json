@@ -52,7 +52,7 @@
     "main": "./dist/PureDango.cjs",
     "exports": {
         ".": "./dist/PureDango.cjs",
-        "./src/core/tokenizer/tokenizer.js": "./dist/lib/tokenizer.cjs",
+        "./src/core/lexer/main.js": "./dist/lib/tokenizer.cjs",
         "./src/core/parser/main.js": "./dist/lib/main.cjs"
     }
 }

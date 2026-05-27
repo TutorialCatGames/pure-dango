@@ -167,14 +167,6 @@ class MissingTokenError extends SyntaxError
     }
 }
 
-class MissingRightSide extends SyntaxError
-{
-    constructor(after : any, row : number, column : number)
-    {
-        super(`expected an expression or value after "${after}"`, row, column);
-    }
-}
-
 class UnaryOperatorError extends SyntaxError
 {
     constructor(value : any, row : number, column : number)
@@ -192,7 +184,6 @@ export const parseErrors =
     UnexpectedTokenError,
     MissingTokenError,
     InvalidPostfixError,
-    MissingRightSide,
     UnaryOperatorError
 }
 

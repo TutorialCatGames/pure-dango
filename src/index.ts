@@ -22,7 +22,7 @@ import readline  from "readline";
 import {execSync} from "child_process";
 
 import {parser}                    from  "./core/parser/main";
-import {tokenizer}                 from  "./core/tokenizer/tokenizer";
+import {tokenizer}                 from  "./core/lexer/main";
 import {interpret, Scope, initGMP} from  "./core/interpreter";
 import {buildBytecode}             from  "./core/compiler";
 

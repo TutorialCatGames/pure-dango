@@ -171,7 +171,7 @@ class MissingRightSide extends SyntaxError
 {
     constructor(after : any, row : number, column : number)
     {
-        super(`rxpected an expression or value after "${after}"`, row, column);
+        super(`expected an expression or value after "${after}"`, row, column);
     }
 }
 

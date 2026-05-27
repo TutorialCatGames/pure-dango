@@ -29,7 +29,9 @@ import
     executeInCurrentContext
 } from "../core/interpreter";
 
+import {syncWrappers} from "./syncWorker";
 import {precisionToBits} from "gmp-wasm";
+
 
 type Stack = number[] | string[] | null[];
 
@@ -1481,3 +1483,76 @@ export const asyncFunctions =
         return await executeInCurrentContext(code, isolateScope);
     }
 };
+
+export const syncIOFunctions =
+{
+    "input": (stack : Stack, getTrueValue : Function, ...args : any[]) : string =>
+    {
+        const joinedStrings = joinStrings(args.map((x : any) => isGFloat(x) ? x.inner.toFixed() : x));
+        const prompt = interpretEscapeCharacters(joinedStrings);
+        
+        return syncWrappers.input(prompt);
+    },
+
+    "sleep": (stack : Stack, getTrueValue : Function, ...args : any[]) : void =>
+    {
+        maxArguments(1, args, "sleep");
+        
+        const ms : any = args[0];
+        if (ms === undefined)
+            errorTemplate("sleep", `ms parameter is undefined`);
+
+        syncWrappers.sleep(Number(ms));
+    },
+
+    "http_get" : (stack : Stack, getTrueValue : Function, ...args : any[]) : string =>
+    {
+        maxArguments(2, args, "http_get");
+        const url : string = args[0];
+        if (!url || typeof url !== "string")
+            errorTemplate("http_get", `url parameter must be a String, got "${url}"`);
+
+        const options : any = args[1] || {};
+        const headers : Record<string, string> = unwrap(options?.headers || {});
+
+        return syncWrappers.http_get(url, headers);
+    },
+
+    "http_post" : (stack : Stack, getTrueValue : Function, ...args : any[]) : string =>
+    {
+        maxArguments(3, args, "http_post");
+
+        const url : string = args[0];
+        if (!url || typeof url !== "string")
+            errorTemplate("http_post", `url parameter must be a String, got "${url}"`);
+
+        const data    : any = args[1];
+        const options : any = args[2] || {};
+        const headers : Record<string, string> = unwrap(options?.headers || {});
+
+        return syncWrappers.http_post(url, data, headers);
+    },
+
+    "http_request" : (stack : Stack, getTrueValue : Function, ...args : any[]) : string =>
+    {
+        maxArguments(1, args, "http_request");
+
+        const config : any = args[0];
+        if (!config || typeof config !== "object")
+            errorTemplate("http_request", `config parameter must be an Object`);
+
+        return syncWrappers.http_request(unwrap(config));
+    },
+
+    "exec" : (stack : Stack, getTrueValue : Function, ...args : any[]) : any =>
+    {
+        maxArguments(2, args, "exec");
+
+        const code : string = args[0];
+        if (typeof code !== "string")
+            errorTemplate("exec", `code parameter must be a String, got "${code}"`);
+
+        // exec still needs special handling - will be handled by interpreter directly
+        return undefined;
+    },
+}

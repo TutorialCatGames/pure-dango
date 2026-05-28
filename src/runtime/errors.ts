@@ -188,15 +188,6 @@ export const parseErrors =
 }
 
 // utils errors
-
-class NegativeExponentError extends GeneralError
-{
-    constructor(exponent : number | bigint | any)
-    {
-        super("NegativeExponentError", `exponent "${exponent}" must be positive when raising BigInt`);
-    }
-}
-
 class FunctionArgumentError extends GeneralError
 {
     constructor(functionName : string, maxLength : number, plural : string)
@@ -207,6 +198,5 @@ class FunctionArgumentError extends GeneralError
 
 export const utilsErrors = 
 {
-    NegativeExponentError,
     FunctionArgumentError
 }

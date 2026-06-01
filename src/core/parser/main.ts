@@ -84,7 +84,7 @@ function isUnaryPrefix(operator : string) : boolean
 function parseStartingToken(token : BaseToken, tokens : Tokens, state : State) : ParserToken | null
 {
     if (!token)
-        errorTemplate("parseStartingToken", `Unexpected end of input`);
+        errorTemplate("parseStartingToken", `unexpected end of input`);
 
     let 
     {

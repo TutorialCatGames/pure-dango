@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs, { read } from "fs";
 import util from "util";
 import path from "path";
 import readline from "readline";
@@ -32,6 +32,21 @@ import
 import {syncWrappers} from "./syncWorker";
 import {precisionToBits} from "gmp-wasm";
 
+process.on(
+    "exit", () =>
+    {
+        try 
+        {
+            (process.stdin as any).setRawMode?.(false);
+        } 
+        catch {}
+        try 
+        { 
+            process.stdin.destroy(); 
+        } 
+        catch {}
+    }
+);
 
 type Stack = number[] | string[] | null[];
 
@@ -1349,6 +1364,52 @@ export const asyncFunctions =
         return inputValue;
     },
 
+    "input_format": async (stack: Stack, getTrueValue: Function, ...args: any[]) : Promise<string> =>
+    {
+        maxArguments(1, args, "input_format");
+
+        const template : string = args[0];
+        if (typeof template !== "string")
+            errorTemplate("input_format", `template parameter must be a String, got "${template}"`);
+
+        const parts   : string[] = template.split("{}");
+        const results : string[] = [];
+
+        for (let i = 0; i < parts.length - 1; i++)
+        {
+           const rl : readline.Interface = readline.createInterface(
+                {
+                    input  : process.stdin,
+                    output : process.stdout
+                }
+            );
+
+            let prompt : string = parts[0];
+            for (let j = 0; j <= i; j++)
+            {
+                prompt += parts[j];
+                if (j < i) 
+                    prompt += results[j];
+            }
+
+            const answer : string = await new Promise(
+                resolve => 
+                {
+                    rl.question(interpretEscapeCharacters(prompt), answer => resolve(answer));
+                }
+            );
+
+            rl.close();
+            results.push(answer);
+        }
+
+        let assembled : string = parts[0];
+        for (let i = 0; i < results.length; i++)
+            assembled += results[i] + parts[i + 1];
+
+        return assembled;
+    },
+
     "sleep": async (stack: Stack, getTrueValue: Function, ...args: any[]) : Promise<void> =>
     {
         maxArguments(1, args, "sleep");
@@ -1486,12 +1547,85 @@ export const asyncFunctions =
 
 export const syncIOFunctions =
 {
-    "input": (stack : Stack, getTrueValue : Function, ...args : any[]) : string =>
+    "input": (stack: Stack, getTrueValue: Function, ...args: any[]): string =>
     {
         const joinedStrings = joinStrings(args.map((x : any) => isGFloat(x) ? x.inner.toFixed() : x));
         const prompt = interpretEscapeCharacters(joinedStrings);
         
-        return syncWrappers.input(prompt);
+        process.stdout.write(prompt);
+        
+        const buffer = Buffer.alloc(1024);
+        let result = "";
+        let bytesRead: number;
+        
+        while (true)
+        {
+            bytesRead = fs.readSync(process.stdin.fd, buffer, 0, 1, null);
+            if (bytesRead === 0)
+                break;
+
+            const character = buffer.toString("utf8", 0, bytesRead);
+            if (character === "\n")
+                break;
+            if (character === "\r")
+                continue;
+
+            result += character;
+        }
+        
+        return result;
+    },
+
+    "input_format": (stack: Stack, getTrueValue: Function, ...args: any[]): string =>
+    {
+        maxArguments(1, args, "input_format");
+
+        const template : string = args[0];
+        if (typeof template !== "string")
+            errorTemplate("input_format", `template parameter must be a String, got "${template}"`);
+
+        const parts   : string[] = template.split("{}");
+        const results : string[] = [];
+
+        const readLine = (prompt: string): string =>
+        {
+            process.stdout.write(prompt);
+
+            const buffer = Buffer.alloc(1024);
+            let result = "";
+
+            while (true)
+            {
+                const bytesRead = fs.readSync(process.stdin.fd, buffer, 0, 1, null);
+                if (bytesRead === 0)
+                    break;
+
+                const character = buffer.toString("utf8", 0, bytesRead);
+                if (character === "\n")
+                    break;
+                if (character === "\r")
+                    continue;
+
+                result += character;
+            }
+
+            return result;
+        };
+
+        for (let i = 0; i < parts.length - 1; i++)
+        {
+            let prompt : string = parts[0];
+            for (let j = 0; j < i; j++)
+                prompt += results[j] + parts[j + 1];
+
+            results.push(readLine(interpretEscapeCharacters(prompt)));
+        }
+
+        let assembled : string = parts[0];
+        for (let i = 0; i < results.length; i++)
+            assembled += results[i] + parts[i + 1];
+
+        return assembled;
     },
 
     "sleep": (stack : Stack, getTrueValue : Function, ...args : any[]) : void =>

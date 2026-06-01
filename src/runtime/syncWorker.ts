@@ -117,7 +117,7 @@ parentPort.on(
             }
             
             // encode result as JSON into shared buffer
-            const encoded = new TextEncoder().encode({JSON.stringify(ok: true, result)});
+            const encoded = new TextEncoder().encode(JSON.stringify({ok: true, result}));
 
             if (encoded.length > data.length)
                 errorTemplate("parentPort", "result too large for shared buffer")

@@ -175,16 +175,19 @@ process.on(
 
             saveBytecode(cacheFolder, BYTECODE as Array<string | number>, filename, srcMTime);
         }
-
         else 
             await run(interpret, state, BYTECODE, path.dirname(path.resolve(filePath)), filePath);
 
+        process.stdin.destroy();
+
         console.log(`\nPure dango program exited after: ${state.time.toFixed(3)} milliseconds...`);
+        process.exit(0); 
     }
 
     catch (error : unknown)
     {
         console.error(`\n${(error as Error).message}`);
         console.log(`Pure dango program exited after: ${state.time.toFixed(3)} milliseconds...`);
+        process.exit(1); 
     }
 })()

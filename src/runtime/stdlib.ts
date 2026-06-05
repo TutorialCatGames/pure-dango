@@ -126,13 +126,9 @@ export const syncFunctions =
 
     "out": (stack: Stack, getTrueValue: Function, ...args: any[]) : void =>
     {
-        const map = args.map(item => isGFloat(item)
-            ? util.inspect(item.inner.toFixed(), {colors: true})
-            : util.inspect(item, {colors: true})
-        );
-
-        const joined  : string = joinStrings(map);
-        const escaped : string = interpretEscapeCharacters(joined);
+        const map     = args.map(item => isGFloat(item) ? item.inner.toFixed() : item);
+        const joined  = joinStrings(map);
+        const escaped = interpretEscapeCharacters(joined);
         process.stdout.write(escaped);
     },
 
@@ -1530,19 +1526,6 @@ export const asyncFunctions =
             errorTemplate("http_request", error.message);
         }
     },
-
-    "exec": async (stack: Stack, getTrueValue: Function, ...args: any[]) : Promise<any> =>
-    {
-        maxArguments(2, args, "exec");
-
-        const code : string = args[0];
-        if (typeof code !== "string")
-            errorTemplate("exec", `code parameter must be a String, got "${code}"`);
-
-        const isolateScope : boolean = args[1] ?? false;
-
-        return await executeInCurrentContext(code, isolateScope);
-    }
 };
 
 export const syncIOFunctions =
@@ -1676,17 +1659,5 @@ export const syncIOFunctions =
             errorTemplate("http_request", `config parameter must be an Object`);
 
         return syncWrappers.http_request(unwrap(config));
-    },
-
-    "exec" : (stack : Stack, getTrueValue : Function, ...args : any[]) : any =>
-    {
-        maxArguments(2, args, "exec");
-
-        const code : string = args[0];
-        if (typeof code !== "string")
-            errorTemplate("exec", `code parameter must be a String, got "${code}"`);
-
-        // exec still needs special handling - will be handled by interpreter directly
-        return undefined;
     },
 }
